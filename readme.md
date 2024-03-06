@@ -7,8 +7,8 @@ This tool computes the Spectral Energy Distribution that a FLASH simulated AGN J
 * which radiative processes to consider;
 
 It comes with two codes:
-1 main.py
-2 plotting.py
+- main.py
+- plotting.py
 
 Where the first one computes the SED and produces a plot, the latter can be used to show blobs distribution via histograms and contour plots.
 
@@ -99,6 +99,7 @@ In this case it is necessary to specify:
     > label2 = energy 
     >
     > label3 = pres
+    
     etc. 
 * bin_rule - the rule to use when determining the number of bins.
     * Three different options available: *sqrt*, *rice*, *sturges*. More info on User's Manual.
