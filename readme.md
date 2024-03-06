@@ -26,31 +26,34 @@ It has been correctly ran and tested on **Ubuntu 23.10**. It does **not** work o
 
 Before using it, it is necessary to compile the _C code_ found in lib/c_routines/codes using:
 > gcc -g - Wall raytrace . c -o raytrace - lm
+
 Alternatevily one can launch _compile.sh_ via terminal making sure to issue the command
+
 > sh compile.sh
+
 from the same folder in which _main.py plotter.py_ and _lib_ are located.
 
 ### Input file structure
 
 The tool expects HDF5 files produced via FLASH. It looks for the following parameters with the respective structure:
 * temp
- * 8x8x8
+    * 8x8x8
 * dens
- * 8x8x8
+    * 8x8x8
 * pres
- * 8x8x8
+    * 8x8x8
 * ener
- * 8x8x8
+    * 8x8x8
 * velx
- * 8x8x8
+    * 8x8x8
 * vely
- * 8x8x8
+    * 8x8x8
 * velz
- * 8x8x8
+    * 8x8x8
 * block size
- * 1x3
+    * 1x3
 * coordinates
- * 1x3
+    * 1x3
 
 It also looks for the time between the current input simulation time and the next one in _real runtime parameters_ section and it assumes to be labeled as _dt_.
 
@@ -91,8 +94,10 @@ There are two graphs structure available: *histogram* and *counter* plots. In or
 In this case it is necessary to specify:
 * label1 - the physical quantity to consider
     * The user can indicate to compute more than 1 histogram per once. This can be done by entering more than one parameter. i.e.:
-    > label1 = temp //
-    > label2 = energy //
+    > label1 = temp
+    >
+    > label2 = energy 
+    >
     > label3 = pres
     etc. 
 * bin_rule - the rule to use when determining the number of bins.
