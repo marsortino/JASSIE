@@ -34,23 +34,23 @@ from the same folder in which _main.py plotter.py_ and _lib_ are located.
 
 The tool expects HDF5 files produced via FLASH. It looks for the following parameters with the respective structure:
 * temp
- * $8*8*8$
+ * 8x8x8
 * dens
- * $8*8*8$
+ * 8x8x8
 * pres
- * $8*8*8$
+ * 8x8x8
 * ener
- * $8*8*8$
+ * 8x8x8
 * velx
- * $8*8*8$
+ * 8x8x8
 * vely
- * $8*8*8$
+ * 8x8x8
 * velz
- * $8*8*8$
+ * 8x8x8
 * block size
- * $1*3$
+ * 1x3
 * coordinates
- * $1*3$
+ * 1x3
 
 It also looks for the time between the current input simulation time and the next one in _real runtime parameters_ section and it assumes to be labeled as _dt_.
 
@@ -91,8 +91,8 @@ There are two graphs structure available: *histogram* and *counter* plots. In or
 In this case it is necessary to specify:
 * label1 - the physical quantity to consider
     * The user can indicate to compute more than 1 histogram per once. This can be done by entering more than one parameter. i.e.:
-    > label1 = temp
-    > label2 = energy
+    > label1 = temp //
+    > label2 = energy //
     > label3 = pres
     etc. 
 * bin_rule - the rule to use when determining the number of bins.
