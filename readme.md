@@ -12,7 +12,7 @@ It comes with two codes:
 
 Where the first one computes the SED and produces a plot, the latter can be used to show blobs distribution via histograms and contour plots.
 
-For further informations check the [User's Manual][usermanual.pdf]
+For further informations check the [User's Manual](usermanual.pdf)
 
 ## Requirement and installation
 
@@ -75,7 +75,7 @@ In order to run _main.py_, one must indicate in _config.txt_:
     User can choose whether to consider synchrotron radiation, inverse compton, bremmstrahlung as well as the presence of a disk etc
 * Units of measure and grid units dimensions
 
-An example of _config.txt_ is provided. The [User's Manual][usermanual.pdf] provide an in detail explanation of the features and how to set it to provide maximum results.
+An example of _config.txt_ is provided. The [User's Manual](usermanual.pdf) provide an in detail explanation of the features and how to set it to provide maximum results.
 
 ### _plotting_
 
@@ -104,7 +104,7 @@ In this case it is necessary to specify:
     
     etc. 
 * bin_rule - the rule to use when determining the number of bins.
-    * Three different options available: *sqrt*, *rice*, *sturges*. More info on [User's Manual][usermanual.pdf].
+    * Three different options available: *sqrt*, *rice*, *sturges*. More info on [User's Manual](usermanual.pdf).
 
 #### _counter_
 
