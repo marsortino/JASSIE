@@ -1,0 +1,61 @@
+# ***** File paths:
+file_path = /home/marco/coding/python/main/data/run1.hdf5
+file_saving_path = ''
+# ***** if you want to launch multiple session put id_launch = y
+id_launch = n
+file_list_path = ''
+# ***** Indexing settings:
+pres_Min = 1e-100 cm-1 g s-2 
+pres_Max = 1e100 cm-1 g s-2 
+dens_Min = 1e-100 g cm-3
+dens_Max = 1e100 g cm-3
+energy_Min = 1 erg
+energy_Max = 1e50 erg
+T_Min = 1 K
+T_Max =  1e20 K
+# ***** Jet settings:
+# PowerLaw -> p
+# # BrokenPowerLaw -> p1 p2 gamma_B
+# n_e = BrokenPowerLaw
+# p1 = 1.1
+# p2 = 2.0
+# gamma_B = 2
+n_e = PowerLaw
+p = 1.10
+gamma_Min = 1
+B = 1e-5 G
+Z = 1.22
+mu_0 = 1.4
+E_released = 1
+f_delta = 1
+# ***** Processes to compute:
+id_brem = n
+id_syn = y
+id_ssa = y
+id_ssc = y
+id_ec = n
+# --- CMB:
+id_cmb = n
+# ***** Disc Settings:
+id_disc = n
+# M_BH = 1e45 g
+a = 1
+P_jet = 1e45 erg s-1
+L_disc = 2e46 erg s-1
+eta = 0.083
+R_g_unit = y
+R_in = 6
+R_out = 200
+# ***** Plot settings:
+# nu_Min and nu_Max are the magnitude number, hence they must be float.
+# e.g. nu_Min = 8 -> 10^8 Hz
+nu_Min = 0
+nu_Max = 29
+ObserverDistance = 1e27 cm
+Obs_theta = 0 deg
+Obs_phi = 90 deg
+# ***** Unit settings:
+DistanceUnit = 4.3460247626638975e+24 cm
+TimeUnit = 2.898016026760564e+17 s
+MassUnit = 1.4644322980212338e+43 kg
+GridUnit = 70 kpc

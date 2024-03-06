@@ -1,0 +1,50 @@
+#
+file_path = /home/marco/coding/python/main/data/run1.hdf5
+file_saving_path = ''
+# If the user wants to have the arrays printed:
+display_arrays = yes
+# AVAILABLE LABEL:
+# -- 'density'
+# -- 'pressure'
+# -- 'energy'
+# -- 'temperature
+kind = histogram
+#  AVAILABLE LABEL:
+# -- 'histogram'
+#       if 'kind' = histogram then:
+#           bin_rule = (one between sqrt, rice or sturges)
+#           label1 = parameter1
+#           label2 = parameter2 etc.
+#       example: label1 = density
+# -- 'contour'
+#       if kind = counter then the following must be stated: x_label and y_label must be stated.
+#           - x_label (which quantity must be on x-axis)
+#           - y_label (which quantity must be on y-axis)
+#           - n (number of bins to consider)
+#           - clim (max value to display on the color bar)
+#       n number of bins must be stated aswell.
+#       example: x_label = density
+#       example: y_label = pressure
+#       example:       n = 100
+#
+label1 = temperature
+label2 = energy
+bin_rule = sqrt
+x_label = temperature
+y_label = energy
+n = 20
+clim = 1000
+# ****** Interval settings:
+pres_Min = 1e-20 cm-1 g s-2 
+pres_Max = 1e-5 cm-1 g s-2 
+dens_Min = 1e-30 g cm-3
+dens_Max = 2e-20 g cm-3
+energy_Min = 1 erg
+energy_Max = 1e2 erg
+T_Min = 1e1 K
+T_Max = 1e20 K
+# ***** Unit settings:
+DistanceUnit = 4.3460247626638975e+24 cm
+TimeUnit = 2.898016026760564e+17 s
+MassUnit = 1.4644322980212338e+43 kg
+GridUnit = 70 kpc

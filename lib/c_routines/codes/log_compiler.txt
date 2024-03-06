@@ -1,0 +1,163 @@
+2024-02-26_15:51:16
+Start compile routines...
+/usr/bin/ld: /tmp/ccC7iOj6.o: in function `chord':
+/home/marco/coding/python/last_vers/lib/c_routines/scripts/raytrace.c:133:(.text+0x883): undefined reference to `sqrt'
+/usr/bin/ld: /tmp/ccC7iOj6.o: in function `distance_between_line_point':
+/home/marco/coding/python/last_vers/lib/c_routines/scripts/raytrace.c:164:(.text+0xa1f): undefined reference to `pow'
+/usr/bin/ld: /home/marco/coding/python/last_vers/lib/c_routines/scripts/raytrace.c:164:(.text+0xa54): undefined reference to `pow'
+/usr/bin/ld: /home/marco/coding/python/last_vers/lib/c_routines/scripts/raytrace.c:164:(.text+0xa91): undefined reference to `pow'
+/usr/bin/ld: /home/marco/coding/python/last_vers/lib/c_routines/scripts/raytrace.c:164:(.text+0xaa8): undefined reference to `sqrt'
+collect2: error: ld returned 1 exit status
+////////**********////////
+2024-02-26_15:51:25
+Start compile routines...
+////////**********////////
+2024-02-26_16:18:07
+Start compile routines...
+Compile successful.
+////////**********////////
+2024-02-26_16:28:17
+Start compile routines...
+Compile successful.
+////////**********////////
+2024-02-28_11:33:33
+Start compile routines...
+raytrace.c: In function ‘main’:
+raytrace.c:47:9: warning: implicit declaration of function ‘strcpy’ [-Wimplicit-function-declaration]
+   47 |         strcpy(file_path, argv[4]);
+      |         ^~~~~~
+raytrace.c:5:1: note: include ‘<string.h>’ or provide a declaration of ‘strcpy’
+    4 | #include <time.h>
+  +++ |+#include <string.h>
+    5 | 
+raytrace.c:47:9: warning: incompatible implicit declaration of built-in function ‘strcpy’ [-Wbuiltin-declaration-mismatch]
+   47 |         strcpy(file_path, argv[4]);
+      |         ^~~~~~
+raytrace.c:47:9: note: include ‘<string.h>’ or provide a declaration of ‘strcpy’
+raytrace.c:48:33: warning: passing argument 2 of ‘fopen’ makes pointer from integer without a cast [-Wint-conversion]
+   48 |         list = fopen(file_path, 'r');
+      |                                 ^~~
+      |                                 |
+      |                                 int
+In file included from raytrace.c:1:
+/usr/include/stdio.h:264:44: note: expected ‘const char * restrict’ but argument is of type ‘int’
+  264 |                     const char *__restrict __modes)
+      |                     ~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+Compile successful.
+////////**********////////
+2024-02-28_11:41:35
+Start compile routines...
+raytrace.c: In function ‘main’:
+raytrace.c:47:9: warning: implicit declaration of function ‘strcpy’ [-Wimplicit-function-declaration]
+   47 |         strcpy(file_path, argv[4]);
+      |         ^~~~~~
+raytrace.c:5:1: note: include ‘<string.h>’ or provide a declaration of ‘strcpy’
+    4 | #include <time.h>
+  +++ |+#include <string.h>
+    5 | 
+raytrace.c:47:9: warning: incompatible implicit declaration of built-in function ‘strcpy’ [-Wbuiltin-declaration-mismatch]
+   47 |         strcpy(file_path, argv[4]);
+      |         ^~~~~~
+raytrace.c:47:9: note: include ‘<string.h>’ or provide a declaration of ‘strcpy’
+raytrace.c:48:18: warning: format ‘%c’ expects argument of type ‘int’, but argument 2 has type ‘char *’ [-Wformat=]
+   48 |         printf("%c", file_path);
+      |                 ~^   ~~~~~~~~~
+      |                  |   |
+      |                  int char *
+      |                 %s
+raytrace.c:49:33: warning: passing argument 2 of ‘fopen’ makes pointer from integer without a cast [-Wint-conversion]
+   49 |         list = fopen(file_path, 'r');
+      |                                 ^~~
+      |                                 |
+      |                                 int
+In file included from raytrace.c:1:
+/usr/include/stdio.h:264:44: note: expected ‘const char * restrict’ but argument is of type ‘int’
+  264 |                     const char *__restrict __modes)
+      |                     ~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+Compile successful.
+////////**********////////
+2024-02-28_11:42:07
+Start compile routines...
+raytrace.c: In function ‘main’:
+raytrace.c:34:16: warning: character constant too long for its type
+   34 |         printf('ciao\n');
+      |                ^~~~~~~~
+raytrace.c:34:16: warning: passing argument 1 of ‘printf’ makes pointer from integer without a cast [-Wint-conversion]
+   34 |         printf('ciao\n');
+      |                ^~~~~~~~
+      |                |
+      |                int
+In file included from raytrace.c:1:
+/usr/include/stdio.h:361:43: note: expected ‘const char * restrict’ but argument is of type ‘int’
+  361 | extern int printf (const char *__restrict __format, ...);
+      |                    ~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~
+raytrace.c:34:9: warning: format not a string literal and no format arguments [-Wformat-security]
+   34 |         printf('ciao\n');
+      |         ^~~~~~
+raytrace.c:47:9: warning: implicit declaration of function ‘strcpy’ [-Wimplicit-function-declaration]
+   47 |         strcpy(file_path, argv[4]);
+      |         ^~~~~~
+raytrace.c:5:1: note: include ‘<string.h>’ or provide a declaration of ‘strcpy’
+    4 | #include <time.h>
+  +++ |+#include <string.h>
+    5 | 
+raytrace.c:47:9: warning: incompatible implicit declaration of built-in function ‘strcpy’ [-Wbuiltin-declaration-mismatch]
+   47 |         strcpy(file_path, argv[4]);
+      |         ^~~~~~
+raytrace.c:47:9: note: include ‘<string.h>’ or provide a declaration of ‘strcpy’
+raytrace.c:48:18: warning: format ‘%c’ expects argument of type ‘int’, but argument 2 has type ‘char *’ [-Wformat=]
+   48 |         printf("%c", file_path);
+      |                 ~^   ~~~~~~~~~
+      |                  |   |
+      |                  int char *
+      |                 %s
+raytrace.c:49:33: warning: passing argument 2 of ‘fopen’ makes pointer from integer without a cast [-Wint-conversion]
+   49 |         list = fopen(file_path, 'r');
+      |                                 ^~~
+      |                                 |
+      |                                 int
+/usr/include/stdio.h:264:44: note: expected ‘const char * restrict’ but argument is of type ‘int’
+  264 |                     const char *__restrict __modes)
+      |                     ~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+Compile successful.
+////////**********////////
+2024-02-28_11:45:13
+Start compile routines...
+raytrace.c: In function ‘main’:
+raytrace.c:50:33: warning: passing argument 2 of ‘fopen’ makes pointer from integer without a cast [-Wint-conversion]
+   50 |         list = fopen(file_path, 'r');
+      |                                 ^~~
+      |                                 |
+      |                                 int
+In file included from raytrace.c:1:
+/usr/include/stdio.h:264:44: note: expected ‘const char * restrict’ but argument is of type ‘int’
+  264 |                     const char *__restrict __modes)
+      |                     ~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+Compile successful.
+////////**********////////
+2024-02-28_11:45:45
+Start compile routines...
+raytrace.c: In function ‘main’:
+raytrace.c:50:33: warning: passing argument 2 of ‘fopen’ makes pointer from integer without a cast [-Wint-conversion]
+   50 |         list = fopen(file_path, 'r');
+      |                                 ^~~
+      |                                 |
+      |                                 int
+In file included from raytrace.c:1:
+/usr/include/stdio.h:264:44: note: expected ‘const char * restrict’ but argument is of type ‘int’
+  264 |                     const char *__restrict __modes)
+      |                     ~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+Compile successful.
+////////**********////////
+2024-02-28_11:46:09
+Start compile routines...
+Compile successful.
+////////**********////////
+2024-02-28_11:54:25
+Start compile routines...
+Compile successful.
+////////**********////////
+2024-02-28_11:58:28
+Start compile routines...
+Compile successful.
+////////**********////////
