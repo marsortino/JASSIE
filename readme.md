@@ -1,10 +1,14 @@
 ## Introduction
 
+
+
 This tool computes the Spectral Energy Distribution that a FLASH simulated AGN Jet would generate. It allows a certain degree of customability, providing the user the possibility to decide:
 * the distance;
 * the inclination with respect the line of view;
 * which blobs take part in the emission;
 * which radiative processes to consider;
+
+![example sed](/examples/run1_S_c.png)
 
 It comes with two codes:
 - main.py
@@ -93,6 +97,9 @@ One must indicate:
 There are two graphs structure available: *histogram* and *counter* plots. In order to launch one or the other, the _config\_plot_ structure must be changed.
 
 #### _histogram_
+
+![histogram example](/examples/run1_histogram_energy.png)
+
 In this case it is necessary to specify:
 * label1 - the physical quantity to consider
     * The user can indicate to compute more than 1 histogram per once. This can be done by entering more than one parameter. i.e.:
@@ -107,6 +114,8 @@ In this case it is necessary to specify:
     * Three different options available: *sqrt*, *rice*, *sturges*. More info on [User's Manual](usermanual.pdf).
 
 #### _counter_
+
+![counter example](/examples/run1_contour__temperature_energy.png)
 
 In this case it is necessary to specify:
 * x_label - which physical quantity to be put on the x-axis
