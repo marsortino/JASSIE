@@ -33,6 +33,8 @@ It has been correctly ran and tested on **Ubuntu 23.10**. It does **not** work o
 Before using it, it is necessary to compile the _C code_ found in lib/c_routines/codes using:
 > gcc -g - Wall raytrace . c -o raytrace - lm
 
+and then move the output 'raytrace' in lib/c_routines/exec folder.
+
 Alternatevily one can launch _compile.sh_ via terminal making sure to issue the command
 
 > sh compile.sh
