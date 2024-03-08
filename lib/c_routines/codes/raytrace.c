@@ -61,7 +61,7 @@ int main(int argc, char *argv[]){
 	
 	raytrace = malloc(max*sizeof(long double));
 
-	list = fopen("tmp_raytrace_output.txt", "w");
+	list = fopen("lib/tmp_files/tmp_raytrace_output.txt", "w");
 
 	for(i=0; i<max; i++){
 		raytrace[i] += raytracing(i, max, blocklist, source);
