@@ -124,9 +124,9 @@ double interacting_region(vec source, vec point_on_plane, vec normal){
 	double distance;
 	vec vec1;
 
-	vec1.x = source.x-point_on_plane.x;
-	vec1.y = source.y-point_on_plane.y;
-	vec1.z = source.z-point_on_plane.z;
+	vec1.x = point_on_plane.x - source.x;
+	vec1.y = point_on_plane.y - source.y;
+	vec1.z = point_on_plane.z - source.z;
 	/* Computing the dot product between vec1 and normal */
 	distance = vec1.x*normal.x+vec1.y*normal.y+vec1.z*normal.z;
 	distance = distance/fabsl(distance);
