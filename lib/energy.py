@@ -181,7 +181,7 @@ class Block_Energy:
 
         if cmb == True:
             if block.CMB == True:
-                ExtCompton_values = self.ExtComptonCoolingTime(CMB(block.z), block)
+                ExtCompton_values = self.ExtComptonCoolingTime(CMB(block.redshift), block)
                 t.append(ExtCompton_values[0])
                 u_rad.append(ExtCompton_values[1])
 

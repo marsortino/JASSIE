@@ -285,8 +285,9 @@ class ExtCompton:
                     
             if block.CMB:
                 i_cmb += 1
-                ec = ExternalCompton(block.blob, CMB(block.z), block.distance)
+                ec = ExternalCompton(block.blob, CMB(block.redshift), block.distance)
                 totalsed +=  self.lineofview(ec.sed_flux(nu), block)
+                print(totalsed)
             for sed in sed_list:
                 sed1 = sed.sed_flux(nu)
                 if (np.isnan(sed1)).any():

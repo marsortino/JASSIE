@@ -52,7 +52,7 @@ class block:
         self.radius = (0.5*blocksize.to('cm'))
         self.distance = np.sqrt(coords[0]**2+coords[1]**2+coords[2]**2)
         self.obs_distance = self.BlockObserverDistance()
-        self.redshift = self.redshift()
+        self.redshift = self.RedshiftCompiler()
 
         self.velx = vel[0].to(u.Unit('km s-1'))
         self.vely = vel[1].to(u.Unit('km s-1'))
@@ -91,7 +91,7 @@ class block:
 
         return np.arccos(np.dot(vel,self.obs)/(magn_vel*magn_obs))
     
-    def redshift(self):
+    def RedshiftCompiler(self):
         """
         Returns the redshift of the block.
         """
@@ -156,6 +156,7 @@ class block:
         raypath :class:`~astropy.unit.Quantity`: thickness of intermediate medium between the source and the observer 
         target :class:`~str`: One end of the line of view, the other being the center of the blob. May be: 'source', 'observer', 'CMB'
         """
+
         if target == 'source':
             self.src_raypath = raypath
         if target == 'observer':
