@@ -370,8 +370,16 @@ def BlocklistTXT(blocklist):
     """
 
     file_path = os.path.dirname(os.path.abspath(__file__))
-    file_path = os.path.join(file_path, 'tmp_files/block_list_value.txt')
-    block_list = open(file_path, 'w')
+    file_path = os.path.join(file_path, 'tmp_files')
+    if not os.path.exists(file_path):
+        os.mkdir(file_path)
+    file_path = os.path.join(file_path, 'block_list_value.txt')
+
+    if os.path.exists(file_path):
+        block_list = open(file_path, 'w')
+    else:
+        block_list = open(file_path, 'x')
+        
     block_list.write(str(len(blocklist)))
     for block in blocklist:
         block_list.write('\n'+str(block.x)+' '+str(block.y)+' '+str(block.z)+' '+str(block.radius.value))
