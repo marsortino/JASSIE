@@ -115,7 +115,6 @@ if sets['id_brem']:
     start_time = time.time()
     seds.append(em.Bremsstrahlung(blocklist, sets))
     end_time = time.time()
-    print(end_time-start_time)
     print('Bremmstrahlung computed in', "{:.2f}".format(end_time-start_time), 'seconds.')
     # *************************************//
 
@@ -125,7 +124,6 @@ if sets['id_syn']:
     start_time = time.time()
     seds.append(em.synchrotron(blocklist, sets))
     end_time = time.time()
-    print(end_time-start_time)
     print('Synchrotron computed in',"{:.2f}".format(end_time-start_time), 'seconds.')
     # *************************************//
 
