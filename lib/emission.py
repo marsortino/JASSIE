@@ -274,8 +274,8 @@ class ExtCompton:
         print("Starting computing External Compton with CMB. It will take some time.")
         i_ec = 0
         i_cmb = 0
-        n_scartati = 0
-        for index, block in enumerate(blocklist):
+
+        for block in enumerate(blocklist):
             sed_list = []
 
             if block.EC:
@@ -287,19 +287,11 @@ class ExtCompton:
                 i_cmb += 1
                 ec = ExternalCompton(block.blob, CMB(block.redshift), block.distance)
                 totalsed +=  self.lineofview(ec.sed_flux(nu), block)
-                print(totalsed)
+
             for sed in sed_list:
                 sed1 = sed.sed_flux(nu)
-                if (np.isnan(sed1)).any():
-                    n_scartati += 1
-                    print('scartato:', n_scartati)
-                    continue
-                #totalsed += self.lineofview(sed.sed_flux(nu), block)
                 totalsed += self.lineofview(sed1, block)
-            #percentage = (index+1)/n*100
-            #print('Done: ', index, ' over: ', n)
-            #if percentage % 10 == 0:
-                #print(f"Progress: {percentage:.0f}%")
+
         print('total CMB SED computed:', i_cmb)
         print('total EC SED computed:', i_ec)
         return totalsed

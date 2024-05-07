@@ -245,7 +245,7 @@ def sphere(pointlist, blocklist):
         point_index = np.flip(points_index)
         pointlist = np.delete(pointlist, point_index, 0)
         sec_index += len(points_index)
-    print('CMB:')
+
     reduce_index.blocks_selection(blocklist, 'CMB')
 
 
