@@ -19,7 +19,7 @@ def spherical_to_cartesian(rho, theta, phi):
     """
     Converts from spherical to cartesian.
     """
-    x = (rho*np.sin(theta)*np.cos(phi)).to('cm')
-    y = (rho*np.sin(theta)*np.sin(phi)).to('cm')
-    z = (rho*np.cos(theta)).to('cm')
+    x = (rho*np.sin(phi)*np.cos(theta)).to('cm')
+    y = (rho*np.sin(phi)*np.sin(theta)).to('cm')
+    z = (rho*np.cos(phi)).to('cm')
     return np.array([x.value,y.value,z.value])

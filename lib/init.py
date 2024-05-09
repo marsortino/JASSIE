@@ -296,6 +296,9 @@ def recap(config):
                 sys.exit(1)
     
     print("The selected power law is:", config['n_e'])
+    theta = int(config['Obs_theta'].value*100)
+    phi = int(config['Obs_phi'].value*100)
+    name = name+f'_theta_{theta:04d}_phi_{phi:04d}'
 
     config['name'] = name
     print("The resulting plot will be called: "+ name+ ".png")
@@ -313,8 +316,8 @@ def polishing(config):
     --
     config: :class:`~dictionary` dictionary containing the values needed;  
     """
-    removelist = ['Obs_theta', 'Obs_phi', 'nu_Min', 'nu_Max']
-
+    #removelist = ['Obs_theta', 'Obs_phi', 'nu_Min', 'nu_Max']
+    removelist = ['nu_Min', 'nu_Max']
     config['nu'] = np.logspace(config['nu_Min'], config['nu_Max'])*u.Hz
     config['ObsCoords'] = cs.spherical_to_cartesian(config['ObserverDistance'], config['Obs_theta'], config['Obs_phi'])
 
