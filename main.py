@@ -108,12 +108,15 @@ print('Bloblist built in', "{:.2f}".format(end_time-start_time), 'seconds.')
 
 ##  SED
 seds = []
-
+sed_per_emission_process = {}
 if sets['id_brem']:
     # //*************************************
     # BREMMSTRAHLUNG
     start_time = time.time()
-    seds.append(em.Bremsstrahlung(blocklist, sets))
+    sed_value = em.Bremsstrahlung(blocklist, sets).total_sed
+    #seds.append(em.Bremsstrahlung(blocklist, sets))
+    sed_per_emission_process['id_brem'] = sed_value
+    seds.append(sed_value)
     end_time = time.time()
     print('Bremmstrahlung computed in', "{:.2f}".format(end_time-start_time), 'seconds.')
     # *************************************//
@@ -122,7 +125,10 @@ if sets['id_syn']:
     # //*************************************
     # SYNCHROTRON
     start_time = time.time()
-    seds.append(em.synchrotron(blocklist, sets))
+    sed_value = em.synchrotron(blocklist, sets).total_sed
+    #seds.append(em.synchrotron(blocklist, sets))
+    sed_per_emission_process['id_syn'] = sed_value
+    seds.append(sed_value)
     end_time = time.time()
     print('Synchrotron computed in',"{:.2f}".format(end_time-start_time), 'seconds.')
     # *************************************//
@@ -132,28 +138,45 @@ if sets['id_ec']:
     # EXTERNAL COMPTON
     start_time = time.time()
     if 'target_list' in sets:
-        seds.append(em.ExtCompton(blocklist, sets['nu'], sets['target_list'], id_cmb = sets['id_cmb']))
+        sed_per_emission_process['id_disk_cmb'] = em.ExtCompton(blocklist, sets['nu'], sets['target_list'], id_cmb = sets['id_cmb']).total_sed
+        #seds.append(em.ExtCompton(blocklist, sets['nu'], sets['target_list'], id_cmb = sets['id_cmb']))
     else:
-        seds.append(em.ExtCompton(blocklist, sets['nu'], id_cmb = sets['id_cmb']))
+        sed_per_emission_process['id_ec_cmb'] = em.ExtCompton(blocklist, sets['nu'], id_cmb = sets['id_cmb']).total_sed
+        #seds.append(em.ExtCompton(blocklist, sets['nu'], id_cmb = sets['id_cmb']))
     end_time = time.time()
     print('External Compton computed in', "{:.2f}".format(end_time-start_time), 'seconds.')
     # *************************************//
-total_sed = 0
-for sed in seds:
-    total_sed += sed.total_sed
+# total_sed = 0
+# for sed in seds:
+#     total_sed += sed.total_sed
 
 # //*************************************
 ## PLOTTING
 load_mpl_rc()
 
-plot_sed(sets['nu'], total_sed)
-plt.title(sets['name'])
-#plt.xlim([1e9, 1e17])
-plt.ylim([1e-5, (max(total_sed)*10).value])
-plt.savefig(sets['file_saving_path']+'/'+sets['name']+'.png')
-total_time = time.time()
-print('Done in: ', "{:.2f}".format(total_time-initial_time), 'seconds.')
+# plot_sed(sets['nu'], total_sed)
+# plt.title(sets['name'])
+# #plt.xlim([1e9, 1e17])
+# plt.ylim([1e-5, (max(total_sed)*10).value])
+# plt.savefig(sets['file_saving_path']+'/'+sets['name']+'.png')
+# total_time = time.time()
+# print('Done in: ', "{:.2f}".format(total_time-initial_time), 'seconds.')
 
+final_sed = 0
+for key in sed_per_emission_process.keys():
+    plot_sed(sets['nu'], sed_per_emission_process[key], label=key[3:])
+    final_sed += sed_per_emission_process[key]
+plot_sed(sets['nu'], final_sed, label='total flux')
+plt.ylim([1e-5, (max(final_sed)*10).value])
+plt.title(sets['name'])
+plt.savefig(sets['file_saving_path']+'/'+sets['name']+'.png')
+plt.close()
+plot_sed(sets['nu'], final_sed, label='total_flux')
+plt.ylim([1e-5, (max(final_sed)*10).value])
+plt.title(sets['name'] + ' final')
+plt.savefig(sets['file_saving_path']+'/'+sets['name']+'_final.png')
+plt.close()
+total_time = time.time()
 elapsed_time = total_time - initial_time
 minutes = int(elapsed_time // 60)
 seconds = int(elapsed_time % 60)
