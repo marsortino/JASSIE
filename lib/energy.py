@@ -44,6 +44,9 @@ class Block_Energy:
         self.f_delta = config['f_delta']
         self.gamma_min = config['gamma_Min']
 
+        self.id_brem = config['id_brem']
+        self.id_syn = config['id_syn']
+
         self.sphere = False
 
 
@@ -164,10 +167,21 @@ class Block_Energy:
         cmb :class:`~boolean`: check whether to consider the CMB in the External Compton computation or not
         
         """
-        t_brem = self.CoolingTime(block)
-        t_syn = self.SynchroTime(block)
         t = []
         u_rad = []
+
+        if self.id_brem:
+            t_brem = self.CoolingTime(block)        
+            t.append(t_brem)
+        else:
+            t_brem = 99e99 * u.s
+
+        if self.id_syn:
+            t_syn = self.SynchroTime(block)    
+            t.append(t_syn)
+        else:
+            t_syn = 99e99 * u.s
+
         if targetlist != None:
             if block.EC == True:
                 for target in targetlist:
@@ -185,23 +199,28 @@ class Block_Energy:
                 t.append(ExtCompton_values[0])
                 u_rad.append(ExtCompton_values[1])
 
-        t.append(t_brem)
-        t.append(t_syn)
+        t.append(98e99 * u.s)
         t_min = min(t)
-        if t_min < dtmin:
+
+        if t_min == 98e99 * u.s:
+            E_m = 1
+            block.final_energy(E_m)
+            return
+
+        elif t_min <= dtmin:
             E_m = self.gamma_min+0.1
 
         elif t_min == t_brem:
-            E_m = (block.E_i*(1-4*alpha*self.r_e**2*c*block.n_0*self.Z*(self.Z+1)*(np.log(2*block.E_i)-1/3)*t_min)).to(u.Unit('')).value
+            E_m = (block.E_i*(1-4*alpha*self.r_e**2*c*block.n_0*self.Z*(self.Z+1)*(np.log(2*block.E_i)-1/3)*dtmin)).to(u.Unit('')).value
         
         elif t_min == t_syn:
-            E_m = (((-4/3*sigma_T*c*self.B**2/(2*mu0)*block.E_i**2)*t_min/(m_e*c**2)).to(u.Unit(''))+block.E_i).value
+            E_m = (((-4/3*sigma_T*c*self.B**2/(2*mu0)*block.E_i**2)*dtmin/(m_e*c**2)).to(u.Unit(''))+block.E_i).value
         
         else:
             min_index = t.index(t_min)
             u_rad = u_rad[min_index]
-            E_m = (((-4/3*sigma_T*c*u_rad*block.E_i**2)*t_min/(m_e*c**2)).to(u.Unit(''))+block.E_i).value
-        
+            E_m = (((-4/3*sigma_T*c*u_rad*block.E_i**2)*dtmin/(m_e*c**2)).to(u.Unit(''))+block.E_i).value
+
         block.final_energy(E_m)
 
     def EnergyComputer(self, blocklist, dtmin, targetlist = None, cmb = False):

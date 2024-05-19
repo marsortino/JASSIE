@@ -76,6 +76,26 @@ def check_float(config, string):
         sys.stderr.write("Error: " + string + " is missing.\n")
         sys.exit(1)
 
+def check_int(config, string):
+    """
+    Check if the string is an int or not.
+
+    Parameters:
+    --
+    config: :class:`~dictionary` dictionary containing the key;
+
+    string: :class:`~str` string to check; 
+    """
+
+    try:
+        config[string] = int(config[string])
+    except ValueError:
+        sys.stderr.write("Error: " + string + " must be an int.\n")
+        sys.exit(1)
+    except KeyError:
+        sys.stderr.write("Error: " + string + " is missing.\n")
+        sys.exit(1)
+
 def check_quantity(config, string, unit):
     """
     Check if the string is an astropy.unit or not.
@@ -458,6 +478,16 @@ def reader():
         if 'target_list' not in config and config['id_cmb']==False:
             sys.stderr.write("Error: id_ec is set to 'yes' but no emitting region had been declared.\n")
             sys.exit(1)
+
+    try:
+        config['num_cores']
+        check_int(config, 'num_cores')
+        if config['num_cores'] <= 0:
+            sys.stderr("Error: num_cores must be a positive scalar.\n")
+            sys.exit(1)
+    except KeyError:
+        print("num_cores not specified. Putting it at 1.\n")
+        config['num_cores'] = 4
 
     config = polishing(config)
 

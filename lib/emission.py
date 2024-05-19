@@ -190,7 +190,8 @@ class synchrotron:
         for block in blocklist:
             sed = Synchrotron(block.blob).sed_flux(nu)
             synchro += sed*np.exp(-block.k*block.obs_raypath)
-
+            if np.isnan(synchro[0]):
+                exit()
         self.total_sed = synchro
 
     def flux_ssa(self, blocklist, nu):
@@ -270,12 +271,10 @@ class ExtCompton:
         Computes the EC emission - CMB included - over each blob and returns the total sed. 
         """
         totalsed = 0
-        n = len(blocklist)
-        print("Starting computing External Compton with CMB. It will take some time.")
         i_ec = 0
         i_cmb = 0
 
-        for block in enumerate(blocklist):
+        for block in blocklist:
             sed_list = []
 
             if block.EC:
@@ -301,11 +300,8 @@ class ExtCompton:
         Computes the EC emission - NO CMB - over each blob and returns the total sed. 
         """
         totalsed = 0
-        n = len(blocklist)
-        print("Starting computing External Compton without CMB. It will take some time.")
         i = 0
-        n_scartati = 0
-        for index, block in enumerate(blocklist):
+        for block in blocklist:
             
             sed_list = []
         
@@ -316,17 +312,9 @@ class ExtCompton:
 
             for sed in sed_list:
                 sed1 = sed.sed_flux(nu)
-                if (np.isnan(sed1)).any():
-                    n_scartati += 1
-                    print('scartato:', n_scartati)
-                    continue
                 
-                #totalsed +=  self.lineofview(sed.sed_flux(nu), block)
                 totalsed +=  self.lineofview(sed1, block)
-            #percentage = (index+1)/n*100
-            #print('Done: ', index, ' over: ', n)
-           #if percentage % 10 == 0:
-                #print(f"Progress: {percentage:.0f}%")
+
         print('total EC SED computed:', i)
         return totalsed
     
