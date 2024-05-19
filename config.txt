@@ -4,6 +4,7 @@ file_saving_path = ''
 # ***** if you want to launch multiple session put id_launch = y
 id_launch = n
 file_list_path = ''
+num_cores = 4
 # ***** Indexing settings:
 pres_Min = 1e-100 cm-1 g s-2 
 pres_Max = 1e100 cm-1 g s-2 
@@ -30,14 +31,14 @@ E_released = 1
 f_delta = 1
 # ***** Processes to compute:
 id_brem = n
-id_syn = y
-id_ssa = y
-id_ssc = y
-id_ec = n
+id_syn = n
+id_ssa = n
+id_ssc = n
+id_ec = y
 # --- CMB:
-id_cmb = n
+id_cmb = y
 # ***** Disc Settings:
-id_disc = n
+id_disc = y
 # M_BH = 1e45 g
 a = 1
 P_jet = 1e45 erg s-1
