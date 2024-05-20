@@ -109,7 +109,7 @@ class raytracing:
             blob_i.rayline(raypath, obs.name)
         return ray_flux
 
-def C_raytracing(target, blocklist):
+def C_raytracing(target, blocklist, filename):
     """
     Computes raytracing using a C algorithm.
     
@@ -120,13 +120,13 @@ def C_raytracing(target, blocklist):
 
     #output_file_name =  'tmp_' + str(target.name) + '_raytrace_output.txt'
     script_dir = os.path.dirname(__file__)
-    tmp_file_path = 'tmp_files/block_list_value.txt'
+    tmp_file_path = 'tmp_files/tmp_list_value_' + filename + '.txt'
     tmp_file_path = os.path.join(script_dir, tmp_file_path)
 
     c_script_path = "c_routines/exec/raytrace"
     abs_file_path = os.path.join(script_dir, c_script_path)
     result = subprocess.run([abs_file_path, str(target.coords[0]), str(target.coords[1]), str(target.coords[2]), tmp_file_path], capture_output=True, text = True, check=True)
-    
+    print(result.stdout)
     output_path = os.path.join(script_dir, 'tmp_files/tmp_raytrace_output.txt')
     values = open(output_path, 'r').readlines()
     

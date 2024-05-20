@@ -357,7 +357,7 @@ def ssa_opacity(p, nu, K_e, B):
     return coeff*prefactor*exp
     
 
-def BlocklistTXT(blocklist):
+def BlocklistTXT(blocklist, filename):
     """
     Write a txt file containing:
     First Row: the number of the blocks
@@ -373,7 +373,8 @@ def BlocklistTXT(blocklist):
     file_path = os.path.join(file_path, 'tmp_files')
     if not os.path.exists(file_path):
         os.mkdir(file_path)
-    file_path = os.path.join(file_path, 'block_list_value.txt')
+    
+    file_path = os.path.join(file_path, 'tmp_list_value_' + filename+ '.txt')
 
     if os.path.exists(file_path):
         block_list = open(file_path, 'w')
