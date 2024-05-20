@@ -20,7 +20,9 @@ double distance_between_line_point(vec p, vec q, vec r);
 vec normal_vec(vec source, vec block_i);
 double interacting_region(vec source, vec point_on_plane, vec normal);
 long double chord(double radius, double distance);
-double raytracing(int block_num, int max, block* blocklist, vec source);
+double raytracing(int block_num, int max, block* blocklist, vec source, int **indices, int* psphere_counter, int* psphere_counter_max);
+void update_indices(int row, int col, int sphere_index, int **indices);
+char* file_name(char* filepath);
 
 int main(int argc, char *argv[]){
 	
@@ -32,40 +34,62 @@ int main(int argc, char *argv[]){
 
 	clock_t start_t, end_t;
 	double total_t;
-	printf("ciao\n");
 	start_t = clock();
 	vec source;
-	int i = 0, max;
+	int i = 0, j, max, sphere_counter, sphere_counter_max = 0, *psphere_counter, *psphere_counter_max;
 	FILE *list;
 	block *blocklist;
 	long double *raytrace;
-	char file_path[100];
+
 
 	source.x = strtod(argv[1], NULL);
 	source.y = strtod(argv[2], NULL);
 	source.z = strtod(argv[3], NULL);
 
+	char file_path[500];
+
 	strcpy(file_path, argv[4]);
+
+
 	puts(file_path);
 	list = fopen(file_path, "r");
+
 	//list = fopen("../../tmp_files/block_list_value.txt", "r");
 	fscanf(list, "%i", &max);	
-	
+
 	blocklist = malloc(max*sizeof(block));
-	
+
 	while(!feof(list)){
+
 		fscanf(list, "%le %le %le %le", &blocklist[i].center.x, &blocklist[i].center.y, &blocklist[i].center.z, &blocklist[i].r); 
 		i++;
 	}
+
 	fclose(list);
-	
+
 	raytrace = malloc(max*sizeof(long double));
+	*file_path = file_name(file_path);
+	// We define a matrix n^2 made by -1. Each row represents a blob. The code computes which blob are in between the i-th blob and point P.
+	// When this happens, the code updates the value in that row with the index of the blob that lies in between.
+
+	int **indices = (int **)malloc(max * sizeof(int *));
+	for(i = 0; i < max; i++){
+		indices[i] = (int *)malloc(max * sizeof(int));
+		memset(indices[i], -1, max * sizeof(int));
+	}
+
 
 	list = fopen("lib/tmp_files/tmp_raytrace_output.txt", "w");
 
+	psphere_counter = &sphere_counter;
+	psphere_counter_max = &sphere_counter_max;
+
 	for(i=0; i<max; i++){
-		raytrace[i] += raytracing(i, max, blocklist, source);
+		sphere_counter = 0;
+		raytrace[i] += raytracing(i, max, blocklist, source, indices, psphere_counter, psphere_counter_max);
+
 		fprintf(list, "%0.15Le\n", raytrace[i]);
+
 		//printf("block [%d] raytrace value: %Le\n", i, raytrace[i]);
 	}
 	end_t = clock();
@@ -73,34 +97,48 @@ int main(int argc, char *argv[]){
 	fclose(list);
 	free(blocklist);
 	free(raytrace);
-	
+	free(indices);
 	total_t = (double)(end_t-start_t)/CLOCKS_PER_SEC;
 	printf("Raytrace total time: %f\n", total_t);	
 	return 0;
 }
-	
-double raytracing(int i, int max, block* blocklist, vec source){
-	/* Fare il computo di raytracing come nel formato python. block_num è il numero del blocco da computare. max è la dimensione dell'array di x y e z. */
+
+double raytracing(int i, int max, block* blocklist, vec source, int **indices, int* psphere_counter, int* psphere_max_counter){
+	/**/
 	int j;
 	long double raypath = 0, value;
 	int obs_sign, block_j_sgn1, block_j_sgn2;
 	vec normal;
 
+
 	normal = normal_vec(source, blocklist[i].center);
+
 	obs_sign = interacting_region(source, blocklist[i].center, normal);
+
 	for(j=0; j < max; j++){
+
 		if (i!=j){
 			block_j_sgn1 = interacting_region(blocklist[j].center, blocklist[i].center, normal);	
 			block_j_sgn2 = interacting_region(blocklist[j].center, source, normal);
+
 			if ((obs_sign == block_j_sgn1) && (obs_sign == -block_j_sgn2)){
 				value = distance_between_line_point(blocklist[i].center, source, blocklist[j].center);
-				if (value == 0) raypath+=blocklist[j].r;
+
+				if (value == 0){
+					raypath+=blocklist[j].r;
+					update_indices(i,  *psphere_counter, j, indices);
+					(*psphere_counter)++;
+				}
 				else if ((value > 0) && (value < blocklist[j].r)){
 					raypath += chord(blocklist[j].r, value);
+					update_indices(i,  *psphere_counter, j, indices);
+					(*psphere_counter)++;
 				}
 			}					
 		}
 	}
+	if ((*psphere_counter) > (*psphere_max_counter)) (*psphere_max_counter) = (*psphere_counter);
+
 		
 	return raypath;
 }  /* raytracing */
@@ -171,4 +209,30 @@ double distance_between_line_point(vec p, vec q, vec r){
 }
 
 
+void update_indices(int row, int col, int sphere_index, int **indices){
+	/*
+	Updates the indices matrix. 
+	*/
+	indices[row][col] = sphere_index;
+}
 
+char* file_name(char* filepath){
+	char *filename;
+
+    // Find the last occurrence of '/'
+    filename = strrchr(filepath, '/');
+
+    // If a '/' was found, increment the pointer to point to the filename
+    if (filename != NULL) {
+        filename++; // Move past the '/'
+    } else {
+        // If no '/' was found, the entire path is the filename
+        filename = filepath;
+    }
+
+    // Print the filename
+    printf("Filename: %s\n", filename);
+
+    return filename;
+
+}
