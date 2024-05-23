@@ -127,9 +127,16 @@ def C_raytracing(target, blocklist, filename):
     abs_file_path = os.path.join(script_dir, c_script_path)
     result = subprocess.run([abs_file_path, str(target.coords[0]), str(target.coords[1]), str(target.coords[2]), tmp_file_path], capture_output=True, text = True, check=True)
     print(result.stdout)
-    output_path = os.path.join(script_dir, 'tmp_files/tmp_raytrace_output.txt')
+    output_path = os.path.join(script_dir, 'tmp_files/tmp_raytrace_o_' + filename + '.txt')
+    print(output_path)
     values = open(output_path, 'r').readlines()
     
 
     for value, block in zip(values, blocklist):
         block.rayline(float((value.split('\n')[0]))*radius_unit, target.name)
+
+    # Deleting tmp file.
+    output_path = 'rm ' + output_path
+    subprocess.run([output_path], capture_output= True, shell=True)
+
+
