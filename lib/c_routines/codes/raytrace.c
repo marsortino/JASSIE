@@ -46,7 +46,7 @@ int main(int argc, char *argv[]){
 	double total_t;
 	start_t = clock();
 	vec source;
-	int i = 0, j, max, sphere_counter, sphere_counter_max = 0, *psphere_counter, *psphere_counter_max, strlenght;
+	int i = 0, j, max, sphere_counter, sphere_counter_max = 0, *psphere_counter, *psphere_counter_max;
 	FILE *list_raytrace, *list_index;
 	block *blocklist;
 	long double *raytrace;
@@ -237,7 +237,6 @@ void preset_array(int sphere_counter, int sphere_index, double distance, block_d
 	/*
 	Updates the indices matrix, sorting them by distance from the blob i-th.
 	*/
-	int test_variable;
 
 	if(sphere_counter < 2){
 		if(sphere_counter == 0){
@@ -269,8 +268,7 @@ void preset_array(int sphere_counter, int sphere_index, double distance, block_d
 		sorting_distance(distance_array, sphere_index, distance, sphere_counter);
 		return;
 	}
-	// For debugging purposes--
-	scanf("%d", &test_variable);
+
 }
 
 
@@ -279,9 +277,6 @@ char* get_file_name(char* filepath){
 	Detects the correct file name and define the new output name.
 	*/
 	char *filename;
-
-	size_t str_lenght;
-
 
     // Find the last occurrence of '/'
     filename = strrchr(filepath, '/');
@@ -295,15 +290,7 @@ char* get_file_name(char* filepath){
     }
 
     // Print the filename
-	str_lenght =  strlen(filename);
-	filename = filename + 15; // we are adding 'lib/tmp_files/tmp_raytrace_o_' ie. 29 chars
-	// char *outputname_rt = (char *)malloc(str_lenght+15 * sizeof(char)); // +15 because tmp_raytrace_o_ are 14 chars.
-	// strcpy(outputname_rt, "lib/tmp_files/tmp_raytrace_o_");
-	// strcat(outputname_rt, filename);
-
-	// char *outputname_index = (char *)malloc(str_lenght);
-	// strcpy(outputname, "lib/tmp_files/tmp_indices_");
-    // return outputname;
+	filename = filename + 15; 
 	return filename;
 }
 
@@ -317,7 +304,7 @@ double compute_distance(block block_j, block block_i){
 	z =  block_j.center.z - block_i.center.z;
 	distance = sqrt(pow(x, 2)+pow(y,2)+pow(z,2));
 
-	return sqrt(pow(x, 2)+pow(y,2)+pow(z,2));
+	return distance;
 }
 
 void sorting_distance(block_distance* distance_array, int sphere_index, long double distance, int max_index){
@@ -366,9 +353,9 @@ void sorting_distance(block_distance* distance_array, int sphere_index, long dou
 
 void check_duplicates(block_distance* distance_sorted, int size){
 	/* Only for debugging purposes*/
-
-	for (int i = 0; i < size; i++) {
-        for (int j = i + 1; j < size; j++) {
+	int i, j;
+	for (i = 0; i < size; i++) {
+        for (j = i + 1; j < size; j++) {
             if (distance_sorted[i].index == distance_sorted[j].index) { // check if current element is equal to another
                 break;
 			}
