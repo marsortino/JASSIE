@@ -76,15 +76,14 @@ if qh_checker != 0:
 # //*************************************
 # RAYTRACING
 start_time = time.time()
-m.BlocklistTXT(blocklist)
+m.BlocklistTXT(blocklist, sets['name'])
 src = o.target('source', np.array([0.0,0.0,0.0]))
 obs = o.target('observer', sets['ObsCoords'])
-rl.C_raytracing(src, blocklist)
-rl.C_raytracing(obs, blocklist)
+rl.C_raytracing(src, blocklist, sets['name'])
+rl.C_raytracing(obs, blocklist, sets['name'])
 end_time = time.time()   
 print('Raytracing complete in', "{:.2f}".format(end_time-start_time), 'seconds.')
 # *************************************
-
 
 # //*************************************
 # ENERGY BLOCKS 

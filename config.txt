@@ -31,14 +31,14 @@ E_released = 1
 f_delta = 1
 # ***** Processes to compute:
 id_brem = n
-id_syn = n
-id_ssa = n
-id_ssc = n
-id_ec = y
+id_syn = y
+id_ssa = y
+id_ssc = y
+id_ec = n
 # --- CMB:
-id_cmb = y
+id_cmb = n
 # ***** Disc Settings:
-id_disc = y
+id_disc = n
 # M_BH = 1e45 g
 a = 1
 P_jet = 1e45 erg s-1
