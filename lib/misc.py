@@ -380,9 +380,9 @@ def BlocklistTXT(blocklist, filename):
         block_list = open(file_path, 'w')
     else:
         block_list = open(file_path, 'x')
-        
+
     block_list.write(str(len(blocklist)))
     for block in blocklist:
         block_list.write('\n'+str(block.x)+' '+str(block.y)+' '+str(block.z)+' '+str(block.radius.value))
-    
+
     block_list.close()

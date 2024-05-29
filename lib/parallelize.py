@@ -2,8 +2,8 @@ import lib.emission as em
 import multiprocessing
 
 
-def compute_synchro(blocklist, config, q):
-    q.put(em.synchrotron(blocklist, config).total_sed)
+def compute_synchro(blocklist, config, q, whole_blocklist):
+    q.put(em.synchrotron(blocklist, config, whole_blocklist).total_sed)
 
 
 def synchro(blocklist, config):
@@ -15,24 +15,22 @@ def synchro(blocklist, config):
     len_blocklist = len(blocklist)
 
     block_per_core = len_blocklist // num_cores
-
-    q = multiprocessing.Queue()
-    if block_per_core == 0:
-        p = multiprocessing.Process(target=compute_synchro, args=(blocklist, config, q,))
-        p.start()
-        num_cores = 1
+    whole_blocklist = blocklist
+    if block_per_core == 0 or num_cores == 1:
+        total_synchro_sed = em.synchrotron(blocklist, config).total_sed
     else:
+        q = multiprocessing.Queue()
         for i in range(0, num_cores-1):
-            p = multiprocessing.Process(target=compute_synchro, args=(blocklist[i*block_per_core : (i+1)*block_per_core], config, q,))
+            p = multiprocessing.Process(target=compute_synchro, args=(blocklist[i*block_per_core : (i+1)*block_per_core], config, q, whole_blocklist))
             p.start()
-        p = multiprocessing.Process(target=compute_synchro, args=(blocklist[(num_cores-1)*block_per_core:], config, q,))    
+        p = multiprocessing.Process(target=compute_synchro, args=(blocklist[(num_cores-1)*block_per_core:], config, q, whole_blocklist))    
         p.start()
         total_synchro_sed = 0
         p.join()
 
-    for i in range(num_cores):
-        total_synchro_sed += q.get()
-    return total_synchro_sed
+        for i in range(num_cores):
+            total_synchro_sed += q.get()
+        return total_synchro_sed
         
 
 def blocklist_reducer(blocklist):

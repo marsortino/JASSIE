@@ -274,24 +274,24 @@ def recap(config):
         print("- Synchrotron")
         if config['id_ssa']:
             print("- - self-absorption")
-            name = name +'_a'
+            name = name +'a'
         if config['id_ssc']:
-            name = name +'_c'
+            name = name +'c'
             print("- - self-Compton")
     if config['id_ec']:
         name= name +'_EC'
         print("- External Compton")
         if config['id_cmb']:
-            name = name+'_cmb'
+            name = name+'c'
             print("- - CMB")
         if check('id_disc', config):
-            name = name+'_disc'
+            name = name+'d'
             print("- - Disc")
         if check('id_dusttorus', config):
-            name = name+'_dt'
+            name = name+'t'
             print("- - Dust Torus")
         if check('id_blr', config):
-            name = name+'_blr'
+            name = name+'b'
             print("- - BLR")
     elif config['id_ec'] == False:
         warning = '\nAttention, External Compton is set as off but the following processes are still set to be computed:'
@@ -318,7 +318,7 @@ def recap(config):
     print("The selected power law is:", config['n_e'])
     theta = int(config['Obs_theta'].value*100)
     phi = int(config['Obs_phi'].value*100)
-    name = name+f'_theta_{theta:04d}_phi_{phi:04d}'
+    name = name+f'_At{theta:04d}p{phi:04d}'
 
     config['name'] = name
     print("The resulting plot will be called: "+ name+ ".png")
@@ -487,7 +487,7 @@ def reader():
             sys.exit(1)
     except KeyError:
         print("num_cores not specified. Putting it at 1.\n")
-        config['num_cores'] = 4
+        config['num_cores'] = 1
 
     config = polishing(config)
 

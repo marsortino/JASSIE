@@ -123,7 +123,6 @@ class Block_Energy:
             # integral = float(integral)
             prefactor = 3*G*M_BH*m_dot/(8*np.pi*c*r**3*np.power(r_tilde,3))
             U_rad = (prefactor*integral).to(u.Unit('erg cm-3'))
-
             U_rad = U_rad*np.exp((-block.k*block.src_raypath).to(u.Unit(''))) 
 
         t_EC = ((3/4*(m_e*c/sigma_T*U_rad**(-1)*block.E_i**(-1))).to(u.s))

@@ -127,16 +127,27 @@ def C_raytracing(target, blocklist, filename):
     abs_file_path = os.path.join(script_dir, c_script_path)
     result = subprocess.run([abs_file_path, str(target.coords[0]), str(target.coords[1]), str(target.coords[2]), tmp_file_path], capture_output=True, text = True, check=True)
     print(result.stdout)
-    output_path = os.path.join(script_dir, 'tmp_files/tmp_raytrace_o_' + filename + '.txt')
-    print(output_path)
-    values = open(output_path, 'r').readlines()
-    
 
-    for value, block in zip(values, blocklist):
-        block.rayline(float((value.split('\n')[0]))*radius_unit, target.name)
+    output_path = os.path.join(script_dir, 'tmp_files/tmp_raytrace_o_' + filename + '.txt')
+    values = open(output_path, 'r').readlines()
+    if target.name == 'source':
+        for value, block in zip(values, blocklist):
+            block.rayline(float((value.split('\n')[0]))*radius_unit, target.name)
+
+    if target.name == 'observer':
+        output_path_index = os.path.join(script_dir, 'tmp_files/tmp_indices_' + filename + '.txt')
+        values_index = open(output_path_index, 'r').readlines()
+        for value, line, block in zip(values, values_index, blocklist):
+            array = [int(x) for x in line.strip().split(",")]
+            block.rayline(float((value.split('\n')[0]))*radius_unit, target.name, order_array = array)
+        
+        # Deleting tmp file
+        output_path_index = 'rm ' + output_path_index
+        subprocess.run([output_path_index], capture_output= True, shell=True)
 
     # Deleting tmp file.
     output_path = 'rm ' + output_path
     subprocess.run([output_path], capture_output= True, shell=True)
+
 
 

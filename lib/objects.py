@@ -103,7 +103,6 @@ class block:
         """
         vel = np.array([self.velx.value, self.vely.value, self.velz.value])
         vel = np.linalg.norm(np.dot(self.obs, vel)/(np.linalg.norm(self.obs)**2)*self.obs)*self.velx.unit
-        #vel = 298000*u.Unit('km s-1')
         beta = (vel/c).to(u.Unit(''))
         self.beta = beta.value
         self.delta_D = np.sqrt((1+beta)/(1-beta.value))
@@ -147,7 +146,7 @@ class block:
         self.n_e = n_e
         self.n_e_value = n_e_value
 
-    def rayline(self, raypath, target):
+    def rayline(self, raypath, target, order_array = None):
         """
         Sets the raypath of the block. 
         
@@ -161,9 +160,8 @@ class block:
             self.src_raypath = raypath
         if target == 'observer':
             self.obs_raypath = raypath
-        if target == 'CMB':
-            self.cmb_raypath = raypath
-    
+            self.distance_order = order_array
+            
     def set_blob(self, blob):
         """
         Sets the blob property of the block.

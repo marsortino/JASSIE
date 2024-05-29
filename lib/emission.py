@@ -4,6 +4,9 @@ from astropy.constants import c, m_e, h, e, alpha, m_p, sigma_T, mu0
 from agnpy.synchrotron import Synchrotron
 from agnpy.compton import SynchrotronSelfCompton,ExternalCompton
 from agnpy.targets import CMB
+from agnpy.utils.conversion import nu_to_epsilon_prime
+from agnpy.utils.math import axes_reshaper
+from agnpy.compton.kernels import isotropic_kernel
 
 # Order of classes:
 # - Blumenthal
@@ -149,7 +152,7 @@ class synchrotron:
     """
     Computes the SED produced by each Blob using AGNpy routines.
     """
-    def __init__(self, blocklist, config):
+    def __init__(self, blocklist, config, whole_blocklist):
         """
         Parameters:
         --
@@ -166,6 +169,9 @@ class synchrotron:
             self.p2 = config['p2']
             self.gamma_B = config['gamma_B']
 
+        self.ssa = config['id_ssa']
+        self.ssc = config['id_ssc']
+        self.whole_blocklist = whole_blocklist
         id_ssc = config['id_ssc']
         id_ssa = config['id_ssa']
 
@@ -181,6 +187,7 @@ class synchrotron:
             else:
                 self.flux_ssc(blocklist, nu)
 
+
     def flux(self, blocklist, nu):
         """
         Computes the flux in the case in which the self compton is not present.
@@ -190,17 +197,19 @@ class synchrotron:
         for block in blocklist:
             sed = Synchrotron(block.blob).sed_flux(nu)
             synchro += sed*np.exp(-block.k*block.obs_raypath)
-            if np.isnan(synchro[0]):
-                exit()
         self.total_sed = synchro
 
     def flux_ssa(self, blocklist, nu):
-        synchro_ssa = 0
 
+        synchro_ssa = 0
         for block in blocklist:
             sed = Synchrotron(block.blob, ssa = True).sed_flux(nu)
-            #synchro_ssa += sed*np.exp(-block.opacity_ssa(self.p, nu, self.B)*block.obs_raypath)
-            synchro_ssa += sed*np.exp(-block.k*block.obs_raypath)
+            attenuation = 0
+            for index in block.distance_order:
+                absorbing_blob = blocklist[index].blob
+                attenuation += self.synchro_self_absorption(nu, absorbing_blob)
+            synchro_ssa += sed*np.exp(-block.k*block.obs_raypath)*attenuation
+
         self.total_sed = synchro_ssa
 
     def flux_ssc(self, blocklist, nu):
@@ -209,16 +218,16 @@ class synchrotron:
         """
         synchro = 0
         synchro_ssc = 0
-        print('Starting computing Synchrotron and SSC, it may take some time.')
-        n = len(blocklist)
-        for index, block in enumerate(blocklist):
+        for block in blocklist:
             sed = Synchrotron(block.blob).sed_flux(nu)
             synchro += sed*np.exp(-block.k*block.obs_raypath)
             ssc = SynchrotronSelfCompton(block.blob).sed_flux(nu)
-            synchro_ssc += self.ray_path(ssc, block)
-            percentage = (index+1)/n*100
-            if percentage % 10 == 0:
-                print(f"Progress: {percentage:.0f}%")
+            ssc_by_blobs_on_lov = 0
+            for index in block.distance_order:
+                scattering_blob = self.whole_blocklist[index].blob
+                ssc_sed = self.synchroselfcompton(nu, block.blob, scattering_blob, *scattering_blob.n_e.parameters)
+                ssc_by_blobs_on_lov += self.ray_path(ssc_sed, self.whole_blocklist[index])
+            synchro_ssc += self.ray_path(ssc, block) + ssc_by_blobs_on_lov
             
         self.total_sed = synchro+synchro_ssc
     
@@ -226,26 +235,89 @@ class synchrotron:
         """
         Computes the flux in the case in which the self compton is present.
         """
-        synchro = 0
+        synchro_ssa = 0
         synchro_ssc = 0
         print('Starting computing Synchrotron and SSC, it may take some time.')
-        n = len(blocklist)
-        for index, block in enumerate(blocklist):
+        for block in blocklist:
             sed = Synchrotron(block.blob, ssa = True).sed_flux(nu)
-            synchro += sed*np.exp(-block.k*block.obs_raypath)
+
             ssc = SynchrotronSelfCompton(block.blob, ssa = True).sed_flux(nu)
             synchro_ssc += self.ray_path(ssc, block)
-            percentage = (index+1)/n*100
-            if percentage % 10 == 0:
-                print(f"Progress: {percentage:.0f}%")
-            
-        self.total_sed = synchro+synchro_ssc
+            ssc_by_blobs_on_lov = 0
+            attenuation = 0
+            for index in block.distance_order:
+                scattering_blob = self.whole_blocklist[index].blob
+                ssc_sed = self.synchroselfcompton(nu, block.blob, scattering_blob, *scattering_blob.n_e.parameters)
+                attenuation += self.synchro_self_absorption(nu, scattering_blob, *scattering_blob.n_e.parameters)
+                ssc_by_blobs_on_lov += self.ray_path(ssc_sed, self.whole_blocklist[index])
+            synchro_ssa += sed*np.exp(-block.k*block.obs_raypath)*attenuation
+    
+        self.total_sed = synchro_ssa+synchro_ssc
 
     def ray_path(self, sed, block):
         """
         Returns the specific intensity after that it went through the blobs on the line of view.
         """
         return sed*np.exp((-block.k*block.obs_raypath).to(u.Unit('')))
+    
+    def synchroselfcompton(self, nu, emitting_blob, scattering_blob, *args, integrator = np.trapz,):
+        """
+        Computes the synchrotron self Compton, using agnpy method and routines. Modified in order to take
+        into account the synchrotron emitted by a different blob.
+        """
+        nu_to_integrate = np.logspace(5, 30, 200) * u.Hz  # used for SSC
+        epsilon = nu_to_epsilon_prime(nu_to_integrate, emitting_blob.z, emitting_blob.delta_D)
+        epsilon_s = nu_to_epsilon_prime(nu, scattering_blob.z, scattering_blob.delta_D)
+
+        emitting_blob_synchro = Synchrotron(emitting_blob).evaluate_sed_flux(nu_to_integrate,
+                                                                             emitting_blob.z,
+                                                                             emitting_blob.d_L,
+                                                                             emitting_blob.delta_D,
+                                                                             emitting_blob.B,
+                                                                             emitting_blob.R_b,
+                                                                             emitting_blob.n_e,
+                                                                             *args,                                                                             
+                                                                             ssa = self.ssa,
+                                                                             integrator = integrator,
+                                                                             gamma = emitting_blob.gamma_e,
+        )
+
+        ## check u_synch eq.
+        u_synch = (3 * np.power(scattering_blob.d_L, 2) * emitting_blob_synchro) / (
+            c * np.power(scattering_blob.R_b, 2) * np.power(scattering_blob.delta_D, 4) * epsilon
+        )
+        _gamma, _epsilon, _epsilon_s = axes_reshaper(scattering_blob.gamma_e, epsilon, epsilon_s)
+        V_b = 4 / 3 * np.pi * np.power(scattering_blob.R_b, 3)
+        N_e = V_b * scattering_blob.n_e.evaluate(_gamma, *args)
+        # reshape u as epsilon
+        _u_synch = np.reshape(u_synch, (1, u_synch.size, 1))
+        # integrate
+        kernel = isotropic_kernel(_gamma, _epsilon, _epsilon_s)
+        integrand = (
+            _u_synch / np.power(_epsilon, 2) * N_e / np.power(_gamma, 2) * kernel
+        )
+        integral_gamma = integrator(integrand, scattering_blob.gamma_e, axis=0)
+        integral_epsilon = integrator(integral_gamma, epsilon, axis=0)
+        emissivity = 3 / 4 * c * sigma_T * np.power(epsilon_s, 2) * integral_epsilon
+        prefactor = np.power(scattering_blob.delta_D, 4) / (4 * np.pi * np.power(scattering_blob.d_L, 2))
+        return (prefactor * emissivity).to("erg cm-2 s-1")
+
+    def synchro_self_absorption(self, nu, absorbing_blob, *args):
+        """
+        Computes the self absorption for the blobs standing between the emitting blob and the observer using agnpy method.
+        """
+        tau = Synchrotron.evaluate_tau_ssa(nu, 
+                                    absorbing_blob.z,
+                                    absorbing_blob.d_L, 
+                                    absorbing_blob.delta_D, 
+                                    absorbing_blob.B, 
+                                    absorbing_blob.R_b,
+                                    absorbing_blob.n_e,
+                                    *args,
+                                    gamma = absorbing_blob.gamma_e,
+                                    )
+        attenuation = tau_to_attenuation(tau)
+        return attenuation
     
 class ExtCompton:
     """
@@ -320,3 +392,10 @@ class ExtCompton:
     
     def lineofview(self, sed, block):
         return sed*np.exp((-block.k*block.obs_raypath).to(u.Unit('')))
+
+def tau_to_attenuation(tau):
+    """FROM AGNPY ***
+    Converts the synchrotron self-absorption optical depth to an attenuation
+    Eq. 7.122 in [DermerMenon2009]_."""
+    u = 1 / 2 + np.exp(-tau) / tau - (1 - np.exp(-tau)) / np.power(tau, 2)
+    return np.where(tau < 1e-3, 1, 3 * u / tau)
