@@ -103,7 +103,11 @@ int main(int argc, char *argv[]){
 		for(j = 0; j<sphere_counter-1; j++){
 			fprintf(list_index, "%d, ", distance_array[j].index);
 		}
-		fprintf(list_index, "%d\n", distance_array[sphere_counter-1].index);
+		if(sphere_counter == 0){
+				fprintf(list_index, "%d\n", -1);
+		}
+		else fprintf(list_index, "%d\n", distance_array[sphere_counter-1].index);
+		
 		fprintf(list_raytrace, "%0.15Le\n", raytrace[i]);
 	}
 	free(distance_array);
