@@ -58,13 +58,13 @@ print('Blocks built in', "{:.2f}".format(end_time-start_time), 'seconds.')
 start_time = time.time()
 qh_checker = 0
 if sets['id_cmb']:
-    m.sphere(positivelist, blocklist)
-    m.sphere(negativelist, blocklist)
+    m.sphere(positivelist, blocklist, sets['qhull_depth'])
+    m.sphere(negativelist, blocklist, sets['qhull_depth'])
     qh_checker += 1
 
 if sets['id_disc'] == 'y' or sets['id_disc'] == 'yes':
-    m.lower_sphere(positivelist, blocklist) 
-    m.lower_sphere(negativelist, blocklist)
+    m.lower_sphere(positivelist, blocklist, sets['qhull_depth']) 
+    m.lower_sphere(negativelist, blocklist, sets['qhull_depth'])
     qh_checker += 1
 
 end_time = time.time()
