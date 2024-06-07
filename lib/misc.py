@@ -232,12 +232,12 @@ class Compare:
                 blocklist[value].set_EC()
 
     
-def sphere(pointlist, blocklist):
+def sphere(pointlist, blocklist, qhull_depth):
     """
     Computes the subset of blocks which compose the external shells of the distribution of blocks.
     """
     sec_index = 0
-    lenght_pointlist = len(pointlist)*0.1
+    lenght_pointlist = len(pointlist)*qhull_depth
     reduce_index = Compare(len(pointlist))
     while (sec_index <= lenght_pointlist):
         points_index = qh.convex_hull(pointlist)
@@ -255,7 +255,6 @@ def get_lower(polygon):
     """
     minz = np.min(polygon[:,2])
     maxz = np.max(polygon[:,2])
-    threeshold = 1e15
     if abs(minz)>abs(maxz):
         # If the sphere is on the negative z-axis:
         tmp = minz
@@ -272,12 +271,12 @@ def get_lower(polygon):
     lower_curve = np.where(polygon[:,2]<differenza)[0]
     return lower_curve
 
-def lower_sphere(pointlist, blocklist):
+def lower_sphere(pointlist, blocklist, qhull_depth):
     """
     Computes the subset of blocks which compose the external shells of the distribution of blocks. Only the blocks near the source are considered.
     """
     sec_index = 0
-    lenght_pointlist = len(pointlist)*0.05 # it's half of cmb lenght
+    lenght_pointlist = len(pointlist)*qhull_depth/2.0 #Since we are taking the lower part of the sphere, the index must have length/2 wrt to whole sphere index lenght
     reduce_index_disc = Compare(len(pointlist))
     while(sec_index <= lenght_pointlist):
         points_vertices = qh.convex_hull_vertices(pointlist)

@@ -293,6 +293,7 @@ def recap(config):
         if check('id_blr', config):
             name = name+'b'
             print("- - BLR")
+        print("** qhull_depth set to ", config['qhull_depth']*100, "% **")
     elif config['id_ec'] == False:
         warning = '\nAttention, External Compton is set as off but the following processes are still set to be computed:'
         i = 0
@@ -479,15 +480,14 @@ def reader():
             sys.stderr.write("Error: id_ec is set to 'yes' but no emitting region had been declared.\n")
             sys.exit(1)
 
-    try:
-        config['num_cores']
-        check_int(config, 'num_cores')
-        if config['num_cores'] <= 0:
-            sys.stderr("Error: num_cores must be a positive scalar.\n")
-            sys.exit(1)
-    except KeyError:
-        print("num_cores not specified. Putting it at 1.\n")
-        config['num_cores'] = 1
+    check_float(config, 'qhull_depth')
+    check_int(config, 'num_cores')
+    if config['qhull_depth'] < 0 or config['qhull_depth'] > 1:
+        sys.stderr.write("Error: qhull_depth must be a positive scalar between 0 and 1.\n")
+        sys.exit(1)
+    if config['num_cores'] <= 0:
+        sys.stderr.write("Error: num_cores must be a positive scalar.\n")
+        sys.exit(1)
 
     config = polishing(config)
 
