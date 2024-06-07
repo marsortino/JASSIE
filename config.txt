@@ -34,11 +34,14 @@ id_brem = n
 id_syn = y
 id_ssa = y
 id_ssc = y
-id_ec = n
+id_ec = y
+# ***** EC settings:
+qhull_depth = 0.1
+# qhull depth goes from 0 to 1. Put 1 for 100% of depth and 0 for 0%.
 # --- CMB:
-id_cmb = n
+id_cmb = y
 # ***** Disc Settings:
-id_disc = n
+id_disc = y
 # M_BH = 1e45 g
 a = 1
 P_jet = 1e45 erg s-1
@@ -59,4 +62,4 @@ Obs_phi = 90 deg
 DistanceUnit = 4.3460247626638975e+24 cm
 TimeUnit = 2.898016026760564e+17 s
 MassUnit = 1.4644322980212338e+43 kg
-GridUnit = 70 kpc
+GridUnit = 488 pc
