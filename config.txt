@@ -1,5 +1,5 @@
-# ***** File paths:
-file_path = /home/marco/coding/python/main/data/run1.hdf5
+# ***** Launch Settings:
+file_path = /path/to/file.hdf5
 file_saving_path = ''
 # ***** if you want to launch multiple session put id_launch = y
 id_launch = n
@@ -62,4 +62,4 @@ Obs_phi = 90 deg
 DistanceUnit = 4.3460247626638975e+24 cm
 TimeUnit = 2.898016026760564e+17 s
 MassUnit = 1.4644322980212338e+43 kg
-GridUnit = 488 pc
+GridUnit = 100 kpc
