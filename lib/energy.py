@@ -3,6 +3,7 @@ import astropy.units as u
 from astropy.constants import e, m_e, m_p, c, alpha, sigma_T, mu0, G
 from agnpy.targets import SSDisk, RingDustTorus, SphericalShellBLR, CMB
 from agnpy.spectra import PowerLaw, BrokenPowerLaw
+from agnpy.emission_regions import Blob
 import lib.conversions as cs
 from lib.misc import mu_from_r_tilde_dec, integrals
 
@@ -76,6 +77,7 @@ class Block_Energy:
 
         t = ((m_e*c/sigma_T*(self.B**2/mu0)**(-1))/block.E_i).to(u.s)
         return t
+    
     
     def ExtComptonCoolingTime(self, target, block):
         """
@@ -178,6 +180,7 @@ class Block_Energy:
         if self.id_syn:
             t_syn = self.SynchroTime(block)    
             t.append(t_syn)
+
         else:
             t_syn = 99e99 * u.s
 

@@ -7,6 +7,8 @@ from agnpy.targets import CMB
 from agnpy.utils.conversion import nu_to_epsilon_prime
 from agnpy.utils.math import axes_reshaper
 from agnpy.compton.kernels import isotropic_kernel
+from agnpy.absorption import Absorption
+
 
 # Order of classes:
 # - Blumenthal
@@ -172,17 +174,17 @@ class synchrotron:
         self.ssa = config['id_ssa']
         self.ssc = config['id_ssc']
         self.whole_blocklist = whole_blocklist
-        id_ssc = config['id_ssc']
-        id_ssa = config['id_ssa']
+ 
+        self.mu_s = np.cos(np.deg2rad(config['Obs_phi']))
 
-        if id_ssc == False:        
-            if id_ssa:
+        if self.ssc == False:        
+            if self.ssa:
                 self.flux_ssa(blocklist, nu)
             else:
                 self.flux(blocklist, nu)
 
-        elif id_ssc == True:
-            if id_ssa:
+        elif self.ssc == True:
+            if self.ssa:
                 self.flux_ssc_ssa(blocklist, nu)
             else:
                 self.flux_ssc(blocklist, nu)
@@ -196,19 +198,33 @@ class synchrotron:
 
         for block in blocklist:
             sed = Synchrotron(block.blob).sed_flux(nu)
-            synchro += sed*np.exp(-block.k*block.obs_raypath)
+            attenuation_gamma = np.nan_to_num(Absorption(block.blob, mu_s = self.mu_s).absorption_homogeneous(nu), nan = 1)
+            synchro += sed*np.exp(-block.k*block.obs_raypath)*attenuation_gamma
+
         self.total_sed = synchro
 
     def flux_ssa(self, blocklist, nu):
+        """
+        Computes the synchrotron flux taking into account self absorption.
+        It also computes the e^-tau due to gamma absorption. 
+        We can appreciate two contributes to the attenuation of the spectrum: the blobs on the line of view (lov) and the opacity of the emitting blob itself.
+        The emitting blob opacity is computed using agnpy.Absorption_homogeneous routine. 
+        The opacity of the blob on the line of view is obtained computing the ssa and the gamma absorption of each blob on the lov.
+        """
+
 
         synchro_ssa = 0
         for block in blocklist:
             sed = Synchrotron(block.blob, ssa = True).sed_flux(nu)
-            attenuation = 0
+            gamma_absorption_self = Absorption(block.blob, mu_s = self.mu_s).absorption_homogeneous(nu)
+            attenuation_ssa = 1
+            attenuation_gamma_lov = 1
             for index in block.distance_order:
                 absorbing_blob = blocklist[index].blob
-                attenuation += self.synchro_self_absorption(nu, absorbing_blob)
-            synchro_ssa += sed*np.exp(-block.k*block.obs_raypath)*attenuation
+                attenuation_ssa *= self.synchro_self_absorption(nu, absorbing_blob)
+                attenuation_gamma_lov *= Absorption(absorbing_blob, mu_s = self.mu_s).absorption(nu)
+
+            synchro_ssa += sed*np.exp(-block.k*block.obs_raypath)*attenuation_ssa*attenuation_gamma_lov*gamma_absorption_self
 
         self.total_sed = synchro_ssa
 
@@ -218,17 +234,31 @@ class synchrotron:
         """
         synchro = 0
         synchro_ssc = 0
+        i = 0
         for block in blocklist:
-            sed = Synchrotron(block.blob).sed_flux(nu)
-            synchro += sed*np.exp(-block.k*block.obs_raypath)
-            ssc = SynchrotronSelfCompton(block.blob).sed_flux(nu)
+            synchro_flux = Synchrotron(block.blob).sed_flux(nu)
+            gamma_absorption_self = Absorption(block.blob, mu_s = self.mu_s).absorption_homogeneous(nu)
+            gamma_absorption_self = np.nan_to_num(gamma_absorption_self, nan=1)
+
+            synchro += synchro_flux*np.exp(-block.k*block.obs_raypath)*gamma_absorption_self
+
+            ssc = SynchrotronSelfCompton(block.blob).sed_flux(nu)*gamma_absorption_self
             ssc_by_blobs_on_lov = 0
-            for index in block.distance_order:
-                scattering_blob = self.whole_blocklist[index].blob
-                ssc_sed = self.synchroselfcompton(nu, block.blob, scattering_blob, *scattering_blob.n_e.parameters)
-                ssc_by_blobs_on_lov += self.ray_path(ssc_sed, self.whole_blocklist[index])
-            synchro_ssc += self.ray_path(ssc, block) + ssc_by_blobs_on_lov
+
+            flux_post_interaction = synchro_flux
             
+            for index in block.distance_order:
+                scattering_blob = self.whole_blocklist[index]
+                gamma_absorption = Absorption(scattering_blob, mu_s = self.mu_s).absorption(nu) 
+                flux_post_interaction *= gamma_absorption
+
+                ssc_sed = self.synchro_self_compton(nu, flux_post_interaction, block.blob, scattering_blob, *scattering_blob.n_e.parameters)
+                ssc_by_blobs_on_lov += self.get_flux(ssc_sed, self.whole_blocklist[index])
+
+
+
+            synchro_ssc += ssc*np.exp(-block.k*block.obs_raypath) + ssc_by_blobs_on_lov
+
         self.total_sed = synchro+synchro_ssc
     
     def flux_ssc_ssa(self, blocklist, nu):
@@ -239,51 +269,51 @@ class synchrotron:
         synchro_ssc = 0
         print('Starting computing Synchrotron and SSC, it may take some time.')
         for block in blocklist:
-            sed = Synchrotron(block.blob, ssa = True).sed_flux(nu)
+            gamma_absorption_self = np.nan_to_num(Absorption(block.blob, mu_s = self.mu_s).absorption_homogeneous(nu), nan=1)
+            synchro_flux = Synchrotron(block.blob, ssa = True).sed_flux(nu)*gamma_absorption_self
+            ssc = SynchrotronSelfCompton(block.blob).sed_flux(nu)*gamma_absorption_self
 
-            ssc = SynchrotronSelfCompton(block.blob, ssa = True).sed_flux(nu)
-            synchro_ssc += self.ray_path(ssc, block)
+            synchro_ssc += self.get_flux(ssc, block)
             ssc_by_blobs_on_lov = 0
-            attenuation = 0
+            attenuation_ssa = 1
+            flux_post_interaction = synchro_flux
+
             for index in block.distance_order:
+                # Defines the scattering blob, computes the gamma absorption factor.
                 scattering_blob = self.whole_blocklist[index].blob
-                ssc_sed = self.synchroselfcompton(nu, block.blob, scattering_blob, *scattering_blob.n_e.parameters)
-                attenuation += self.synchro_self_absorption(nu, scattering_blob, *scattering_blob.n_e.parameters)
-                ssc_by_blobs_on_lov += self.ray_path(ssc_sed, self.whole_blocklist[index])
-            synchro_ssa += sed*np.exp(-block.k*block.obs_raypath)*attenuation
+                gamma_absorption = Absorption(scattering_blob, mu_s = self.mu_s).absorption(nu) 
+                # Multiplies the original flux by the gamma absorption factor (e^-tau)
+                flux_post_interaction *= gamma_absorption
+                # The resulting flux is the one used to compute the SSC
+                ssc_sed = self.synchro_self_compton(nu, flux_post_interaction, block.blob, scattering_blob, *scattering_blob.n_e.parameters)
+                attenuation_ssa *= self.synchro_self_absorption(nu, scattering_blob, *scattering_blob.n_e.parameters)
+                ssc_by_blobs_on_lov += self.get_flux(ssc_sed, self.whole_blocklist[index])
+
+            synchro_ssa += synchro_flux*np.exp(-block.k*block.obs_raypath)*attenuation_ssa
     
         self.total_sed = synchro_ssa+synchro_ssc
 
-    def ray_path(self, sed, block):
+    def get_flux(self, sed, block):
         """
         Returns the specific intensity after that it went through the blobs on the line of view.
         """
         return sed*np.exp((-block.k*block.obs_raypath).to(u.Unit('')))
     
-    def synchroselfcompton(self, nu, emitting_blob, scattering_blob, *args, integrator = np.trapz,):
+    def synchro_self_compton(self, nu, emitting_blob_flux, emitting_blob, scattering_blob, *args, integrator = np.trapz,):
         """
         Computes the synchrotron self Compton, using agnpy method and routines. Modified in order to take
-        into account the synchrotron emitted by a different blob.
+        into account the synchrotron emitted by a different blob. It also takes into account the gamma absorption.
+
+        Returns: flux*gamma_absorption_coefficient i.e. *e^-tau
+
         """
-        nu_to_integrate = np.logspace(5, 30, 200) * u.Hz  # used for SSC
+        #nu_to_integrate = np.logspace(5, 30, 200) * u.Hz  # used for SSC
+        nu_to_integrate = nu
         epsilon = nu_to_epsilon_prime(nu_to_integrate, emitting_blob.z, emitting_blob.delta_D)
         epsilon_s = nu_to_epsilon_prime(nu, scattering_blob.z, scattering_blob.delta_D)
 
-        emitting_blob_synchro = Synchrotron(emitting_blob).evaluate_sed_flux(nu_to_integrate,
-                                                                             emitting_blob.z,
-                                                                             emitting_blob.d_L,
-                                                                             emitting_blob.delta_D,
-                                                                             emitting_blob.B,
-                                                                             emitting_blob.R_b,
-                                                                             emitting_blob.n_e,
-                                                                             *args,                                                                             
-                                                                             ssa = self.ssa,
-                                                                             integrator = integrator,
-                                                                             gamma = emitting_blob.gamma_e,
-        )
-
-        ## check u_synch eq.
-        u_synch = (3 * np.power(scattering_blob.d_L, 2) * emitting_blob_synchro) / (
+        ## check u_synch eq. 8 FINKE 2008
+        u_synch = (3 * np.power(scattering_blob.d_L, 2) * emitting_blob_flux) / (
             c * np.power(scattering_blob.R_b, 2) * np.power(scattering_blob.delta_D, 4) * epsilon
         )
         _gamma, _epsilon, _epsilon_s = axes_reshaper(scattering_blob.gamma_e, epsilon, epsilon_s)
@@ -300,7 +330,10 @@ class synchrotron:
         integral_epsilon = integrator(integral_gamma, epsilon, axis=0)
         emissivity = 3 / 4 * c * sigma_T * np.power(epsilon_s, 2) * integral_epsilon
         prefactor = np.power(scattering_blob.delta_D, 4) / (4 * np.pi * np.power(scattering_blob.d_L, 2))
-        return (prefactor * emissivity).to("erg cm-2 s-1")
+
+        gamma_abs_homogeneous = np.nan_to_num(Absorption(scattering_blob, mu_s = self.mu_s).absorption_homogeneous(nu), nan = 1)
+
+        return (prefactor * emissivity * gamma_abs_homogeneous).to("erg cm-2 s-1")
 
     def synchro_self_absorption(self, nu, absorbing_blob, *args):
         """
