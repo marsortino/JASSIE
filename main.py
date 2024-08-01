@@ -15,7 +15,9 @@ import lib.objects as o
 import lib.emission as em
 import lib.parallelize as pl
 
-initial_time = time.time()
+
+
+
 
 # //*************************************
 # DATA READER
@@ -26,7 +28,25 @@ start_time = time.time()
 data = m.datamap(sets)
 end_time = time.time()
 print('Data read in', "{:.2f}".format(end_time-start_time), 'seconds.')
+
 # ************************************//
+
+# # SPEED UP AND SCALABILITY TEST PURPOSES
+speed_up_test = False
+if speed_up_test:
+    import os
+    timing_file_pathfile = os.path.dirname(os.path.abspath(__file__))
+    timing_file_pathfile = os.path.join(timing_file_pathfile, sets['name'] + '_n' + str(sets['num_cores']) + '_log_timer.txt')
+
+    if os.path.exists(timing_file_pathfile):
+        ftime = open(timing_file_pathfile, 'a')
+    else:
+        ftime = open(timing_file_pathfile, 'x')
+
+    ftime.write("num_cores: " + str(sets['num_cores']) + "\n")
+# ************************************//
+
+initial_time = time.time()
 
 # //*************************************
 # INDEX COMPILER
@@ -51,6 +71,9 @@ negativelist = pointlist[index_negative_blocks]
 blocklist = builder.blockbuilder(index, data)
 end_time = time.time()
 print('Blocks built in', "{:.2f}".format(end_time-start_time), 'seconds.')
+if speed_up_test:
+    ftime.write("num_cores: " + str(len(blocklist)) + "\n")
+
 # *************************************//
 
 # //*************************************
@@ -114,21 +137,11 @@ if sets['id_brem']:
     # BREMMSTRAHLUNG
     start_time = time.time()
     sed_value = em.Bremsstrahlung(blocklist, sets).total_sed
-    #seds.append(em.Bremsstrahlung(blocklist, sets))
     sed_per_emission_process['id_brem'] = sed_value
     end_time = time.time()
     print('Bremmstrahlung computed in', "{:.2f}".format(end_time-start_time), 'seconds.')
     # *************************************//
 
-# if sets['id_syn']:
-#     # //*************************************
-#     # SYNCHROTRON
-#     start_time = time.time()
-#     sed_value = em.synchrotron(blocklist, sets).total_sed
-#     sed_per_emission_process['id_syn'] = sed_value
-#     end_time = time.time()
-#     print('Synchrotron computed in',"{:.2f}".format(end_time-start_time), 'seconds.')
-#     # *************************************//
 
 if sets['id_syn']:
 #     # //*************************************
@@ -138,25 +151,10 @@ if sets['id_syn']:
     sed_per_emission_process['id_syn'] = sed_value
     end_time = time.time()
     print('Synchrotron computed in',"{:.2f}".format(end_time-start_time), 'seconds.')
+    if speed_up_test:
+        ftime.write('SYN: ' + str(end_time-start_time) + '\n')
+
 #     # *************************************//
-
-
-# if sets['id_ec']:
-#     # //*************************************
-#     # EXTERNAL COMPTON
-#     start_time = time.time()
-#     if 'target_list' in sets:
-#         sed_per_emission_process['id_disk_cmb'] = em.ExtCompton(blocklist, sets['nu'], sets['target_list'], id_cmb = sets['id_cmb']).total_sed
-#         ec_sed = sed_per_emission_process['id_disk_cmb']
-#         #seds.append(em.ExtCompton(blocklist, sets['nu'], sets['target_list'], id_cmb = sets['id_cmb']))
-#     else:
-#         sed_per_emission_process['id_ec_cmb'] = em.ExtCompton(blocklist, sets['nu'], id_cmb = sets['id_cmb']).total_sed
-#         ec_sed = sed_per_emission_process['id_ec_cmb']
-#         #seds.append(em.ExtCompton(blocklist, sets['nu'], id_cmb = sets['id_cmb']))
-#     end_time = time.time()
-#     print('External Compton computed in', "{:.2f}".format(end_time-start_time), 'seconds.')
-#     # *************************************//
-
 
 if sets['id_ec']:
     # //*************************************
@@ -166,8 +164,11 @@ if sets['id_ec']:
     sed_per_emission_process['id_ec'] = sed_value
     end_time = time.time()
     print('External Compton computed in', "{:.2f}".format(end_time-start_time), 'seconds.')
-#     # *************************************//
+    if speed_up_test:
+        ftime.write('ExC: ' + str(end_time-start_time))
 
+# #     # *************************************//
+ftime.close()
 
 ## PLOTTING
 load_mpl_rc()
@@ -177,20 +178,23 @@ final_sed = 0
 for key in sed_per_emission_process.keys():
     plot_sed(sets['nu'], sed_per_emission_process[key], label=key[3:])
     final_sed += sed_per_emission_process[key]
-
+# SED taking into account emission process
 plot_sed(sets['nu'], final_sed, label='total flux')
-plt.ylim([1e-5, (max(final_sed)*10).value])
+plt.ylim([1e-15, (max(final_sed)*10).value])
 plt.title(sets['name'])
 plt.savefig(sets['file_saving_path']+'/'+sets['name']+'.png')
 plt.close()
+# SED with only the final flux
 plot_sed(sets['nu'], final_sed, label='total_flux')
-plt.ylim([1e-5, (max(final_sed)*10).value])
+plt.ylim([1e-15, (max(final_sed)*10).value])
 plt.title(sets['name'] + ' final')
 plt.savefig(sets['file_saving_path']+'/'+sets['name']+'_final.png')
 plt.close()
+
+# Final Output
 total_time = time.time()
 elapsed_time = total_time - initial_time
 minutes = int(elapsed_time // 60)
 seconds = int(elapsed_time % 60)
-
-print('i.e.:', minutes, 'minutes and', seconds, 'seconds.')
+print("Done!")
+print('In: ', minutes, 'minutes and', seconds, 'seconds.')
