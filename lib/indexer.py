@@ -91,7 +91,6 @@ class PlotIndex:
 
         for i in range(n):
             density[i] = (np.mean((self.data.DensSet[i,2:4,2:4,2:4]*self.data.units[2]/(self.data.units[0]**3)).to(u.Unit('g cm-3'))).value)
-            #density[i] = (np.mean((self.data.DensSet[i,2:4,2:4,2:4]*MassUnit/(DistanceUnit**3)).to(u.Unit('g cm-3'))).value)    
             pressure[i] = ((np.mean(self.data.PresSet[i, 2:4,2:4,2:4]*self.data.units[2]/(self.data.units[0]*self.data.units[1]**2)).to(u.Unit('g cm-1 s-2'))).value)
             temp[i] = np.mean(self.data.TempSet[i,2:4,2:4,2:4])
             energy[i] = (np.mean(self.data.EnerSet[i, 2:4,2:4,2:4])*u.erg).value

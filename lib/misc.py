@@ -235,7 +235,13 @@ class Compare:
 def sphere(pointlist, blocklist, qhull_depth):
     """
     Computes the subset of blocks which compose the external shells of the distribution of blocks.
-    """
+
+    Parameters:
+    --
+    pointlist :class:`~list`: list of blobs coordinates.
+    blocklist :class:`~list[objects.block]`: list of blocks.
+    qhull_depth :class:`~float`: value ranging from 0 to 1 indicating the percentage of blocks to consider.
+     """
     sec_index = 0
     lenght_pointlist = len(pointlist)*qhull_depth
     reduce_index = Compare(len(pointlist))
@@ -252,6 +258,10 @@ def sphere(pointlist, blocklist, qhull_depth):
 def get_lower(polygon):
     """
     Returns the blocks whose whose z-axis value is below the midpoint of the distribution's z-axis
+
+    Parameters:
+    --
+    polygon :class:`~list` list of points indicating the vertices of the polygon
     """
     minz = np.min(polygon[:,2])
     maxz = np.max(polygon[:,2])
@@ -274,6 +284,12 @@ def get_lower(polygon):
 def lower_sphere(pointlist, blocklist, qhull_depth):
     """
     Computes the subset of blocks which compose the external shells of the distribution of blocks. Only the blocks near the source are considered.
+
+    Parameters:
+    --
+    pointlist :class:`~list`: list of blobs coordinates.
+    blocklist :class:`~list[objects.block]`: list of blocks.
+    qhull_depth :class:`~float`: value ranging from 0 to 1 indicating the percentage of blocks to consider.
     """
     sec_index = 0
     lenght_pointlist = len(pointlist)*qhull_depth/2.0 #Since we are taking the lower part of the sphere, the index must have length/2 wrt to whole sphere index lenght
@@ -359,13 +375,13 @@ def ssa_opacity(p, nu, K_e, B):
 def BlocklistTXT(blocklist, filename):
     """
     Write a txt file containing:
-    First Row: the number of the blocks
-    Following Rows: x, y, z and radius of each block
+        First Row: the number of the blocks
+        Following Rows: x, y, z and radius of each block
     
-    each value is adimensional. 
+    Each value is adimensional. 
 
-    x,y,z are in cm, radius is in 
-
+        x,y,z are in cm, radius is in cm
+    
     """
 
     file_path = os.path.dirname(os.path.abspath(__file__))

@@ -6,6 +6,10 @@ def convex_hull(points):
     """
     Computes the convex hull of a given list of points.
     Returns index of the points belonging to the convex hull.
+
+    Parameters:
+    --
+    pointlist :class:`~list`: list of blobs coordinates.
     """
     hull = ConvexHull(points)
     simplex = np.unique(hull.simplices)
@@ -15,6 +19,10 @@ def convex_hull_vertices(points):
     """
     Computes the convex hull of a given list of points.
     Returns the vertices of the points belonging to the convex hull.
+
+    Parameters:
+    --
+    pointlist :class:`~list`: list of blobs coordinates.
     """
     hull = ConvexHull(points)
     return hull.points
@@ -22,6 +30,10 @@ def convex_hull_vertices(points):
 def plot_convex_hull(points):
     """
     Computes the convex hull of a given list of points and plots the result.
+
+    Parameters:
+    --
+    pointlist :class:`~list`: list of blobs coordinates.
     """
     hull = ConvexHull(points)
     status = 0

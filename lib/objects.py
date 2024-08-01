@@ -50,7 +50,7 @@ class block:
         self.center = np.array([self.x, self.y, self.z])
         self.obs = ObsCoords
         self.radius = (0.5*blocksize.to('cm'))
-        self.distance = np.sqrt(coords[0]**2+coords[1]**2+coords[2]**2)
+        self.distance = np.sqrt(self.x**2+self.y**2+self.z**2)*u.cm
         self.obs_distance = self.BlockObserverDistance()
         self.redshift = self.RedshiftCompiler()
 

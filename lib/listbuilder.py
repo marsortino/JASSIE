@@ -78,17 +78,18 @@ class builder:
         --
         blocklist :class:`~list` list of objects.block;
         """
-        # fopen = open('blobs_properties.txt', 'x')
-        # fopen.write('radius       z       delta_D       gamma       B       n_e')
         for block in blocklist:
-        #    fopen.write(str(block.radius) + "       " + str(block.z) + "       " + str(block.delta_D) + "       " + str(block.gamma) + "       " + str(self.B) + "       " + str(block.n_e) + "\n")
             blob = Blob(block.radius, block.redshift, block.delta_D, block.gamma, self.B, n_e = block.n_e)
             block.set_blob(blob)
-        #fopen.close()
         
     def pointsbuilder(self, index, coordSet):
         """
         Returns an array of points containing the coordinate of each block multiplied by the gridunit. 
+        
+        Parameters:
+        --
+        index :class:`~list` list of indeces to use.
+        coordSet :class:`~tuple` tuple containing the coordinates of the block.
         """
         pointlist = np.array([])
         status = 0

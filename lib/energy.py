@@ -104,7 +104,7 @@ class Block_Energy:
             R_out = target.R_out
 
 
-            # SUBJECT TO BE CHANGED. MPMATH, TO REMOVE ALSO BLOCKS TOO FAR AWAY.
+            # SUBJECT TO BE CHANGED. MPMATH.
             r_tilde = cs.R_g_units(r, M_BH).value
             R_in_tilde = cs.R_g_units(R_in, M_BH).value
             R_out_tilde = cs.R_g_units(R_out, M_BH).value
