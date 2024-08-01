@@ -127,8 +127,7 @@ class Bremsstrahlung:
         Parameters:
         --
         blocklist :class:`~list[objects.block]`: list of blocks
-        nu :class:`~astropy.quantity`: numpy array of frequency
-
+        nu :class:`~numpy.array(astropy.quantity)`: numpy array of frequency
         Total_J_nu :class:`~emission.Bremmstrahlung.emission`: non-thermal bremmstrahlung emission computed for each block.
         """
         sedlist = []
@@ -193,6 +192,11 @@ class synchrotron:
     def flux(self, blocklist, nu):
         """
         Computes the flux in the case in which the self compton is not present.
+
+        Parameters:
+        --
+        blocklist :class:`~list[objects.block]`: list of blocks
+        nu :class:`~numpy.array(astropy.quantity)`: numpy array of frequency
         """
         synchro = 0
 
@@ -210,20 +214,31 @@ class synchrotron:
         We can appreciate two contributes to the attenuation of the spectrum: the blobs on the line of view (lov) and the opacity of the emitting blob itself.
         The emitting blob opacity is computed using agnpy.Absorption_homogeneous routine. 
         The opacity of the blob on the line of view is obtained computing the ssa and the gamma absorption of each blob on the lov.
+
+        Parameters:
+        --
+        blocklist :class:`~list[objects.block]`: list of blocks
+        nu :class:`~numpy.array(astropy.quantity)`: numpy array of frequency
         """
 
 
         synchro_ssa = 0
         for block in blocklist:
             sed = Synchrotron(block.blob, ssa = True).sed_flux(nu)
+            # Computes the gamma absorption factor.
             gamma_absorption_self = Absorption(block.blob, mu_s = self.mu_s).absorption_homogeneous(nu)
+            # For each block we compute the self absorption produced by the electrons of the blocks that lies on the line of view.
             attenuation_ssa = 1
             attenuation_gamma_lov = 1
             for index in block.distance_order:
+                # Defines the absorbing blob, computes the gamma absorption factor.
                 absorbing_blob = blocklist[index].blob
                 attenuation_ssa *= self.synchro_self_absorption(nu, absorbing_blob)
                 attenuation_gamma_lov *= Absorption(absorbing_blob, mu_s = self.mu_s).absorption(nu)
+                # PS we multiply because we would have I_n = I_0 * e^tau_1 *e^tau_2 * ... * e^tau_n
 
+
+            #Everything is then multiplied. Returning the final sed.
             synchro_ssa += sed*np.exp(-block.k*block.obs_raypath)*attenuation_ssa*attenuation_gamma_lov*gamma_absorption_self
 
         self.total_sed = synchro_ssa
@@ -231,31 +246,37 @@ class synchrotron:
     def flux_ssc(self, blocklist, nu):
         """
         Computes the flux in the case in which the self compton is present.
+
+        Parameters:
+        --
+        blocklist :class:`~list[objects.block]`: list of blocks
+        nu :class:`~numpy.array(astropy.quantity)`: numpy array of frequency
         """
         synchro = 0
         synchro_ssc = 0
-        i = 0
         for block in blocklist:
+            # For each block the sed is computed and then summed up. 
             synchro_flux = Synchrotron(block.blob).sed_flux(nu)
+            # Computes the gamma absorption factor and it is then multiplied to the sed, both the synchro and the synchro self Compton case.
             gamma_absorption_self = Absorption(block.blob, mu_s = self.mu_s).absorption_homogeneous(nu)
             gamma_absorption_self = np.nan_to_num(gamma_absorption_self, nan=1)
-
             synchro += synchro_flux*np.exp(-block.k*block.obs_raypath)*gamma_absorption_self
-
             ssc = SynchrotronSelfCompton(block.blob).sed_flux(nu)*gamma_absorption_self
-            ssc_by_blobs_on_lov = 0
 
+            # For each block we compute the self compton produced by the scattering of synchroton photons flux with the blocks that lies on the line of view.
+            ssc_by_blobs_on_lov = 0
             flux_post_interaction = synchro_flux
             
             for index in block.distance_order:
+                # Defines the scattering blob, computes the gamma absorption factor.
                 scattering_blob = self.whole_blocklist[index]
-                gamma_absorption = Absorption(scattering_blob, mu_s = self.mu_s).absorption(nu) 
+                gamma_absorption = Absorption(scattering_blob, mu_s = self.mu_s).absorption(nu)
+                # Multiplies the original flux by the gamma absorption factor (e^-tau)
                 flux_post_interaction *= gamma_absorption
-
+                # The resulting flux is the one used to compute the SSC
                 ssc_sed = self.synchro_self_compton(nu, flux_post_interaction, block.blob, scattering_blob, *scattering_blob.n_e.parameters)
+                # It is then summed up in order to get the total flux. 
                 ssc_by_blobs_on_lov += self.get_flux(ssc_sed, self.whole_blocklist[index])
-
-
 
             synchro_ssc += ssc*np.exp(-block.k*block.obs_raypath) + ssc_by_blobs_on_lov
 
@@ -264,16 +285,23 @@ class synchrotron:
     def flux_ssc_ssa(self, blocklist, nu):
         """
         Computes the flux in the case in which the self compton is present.
+
+        Parameters:
+        --
+        blocklist :class:`~list[objects.block]`: list of blocks
+        nu :class:`~numpy.array(astropy.quantity)`: numpy array of frequency
         """
         synchro_ssa = 0
         synchro_ssc = 0
         print('Starting computing Synchrotron and SSC, it may take some time.')
         for block in blocklist:
+            # Computes the gamma absorption factor and it is then multiplied to the sed, both the synchro and the synchro self Compton case.
             gamma_absorption_self = np.nan_to_num(Absorption(block.blob, mu_s = self.mu_s).absorption_homogeneous(nu), nan=1)
             synchro_flux = Synchrotron(block.blob, ssa = True).sed_flux(nu)*gamma_absorption_self
             ssc = SynchrotronSelfCompton(block.blob).sed_flux(nu)*gamma_absorption_self
-
+            # For each block the sed is computed and then summed up. 
             synchro_ssc += self.get_flux(ssc, block)
+            # For each block we compute the self compton produced by the scattering of synchroton photons flux with the blocks that lies on the line of view.
             ssc_by_blobs_on_lov = 0
             attenuation_ssa = 1
             flux_post_interaction = synchro_flux
@@ -296,6 +324,12 @@ class synchrotron:
     def get_flux(self, sed, block):
         """
         Returns the specific intensity after that it went through the blobs on the line of view.
+        I.e. 
+                sed*exp(-k*delta_s)
+        where:
+            k is the opacity of the block,
+            delta_s is the interaction lenght i.e. the lenght of the blobs the photons cross before reaching the observer.
+
         """
         return sed*np.exp((-block.k*block.obs_raypath).to(u.Unit('')))
     
@@ -306,6 +340,13 @@ class synchrotron:
 
         Returns: flux*gamma_absorption_coefficient i.e. *e^-tau
 
+        Parameters:
+        --
+        nu :class:`~numpy.array(astropy.quantity)`: numpy array of frequency
+        emitting_blob_flux :class:`~numpy.array(astropy.quantity)`: flux of the emitting blob
+        emitting_blob :class:`~agnpy.emitting_regions.Blob`: the emitting blob
+        scattering_blob :class:`~agnpy.emitting_regions.Blob`: scattering blob
+        *args parameters in order to compute n_e.evaluate()
         """
         #nu_to_integrate = np.logspace(5, 30, 200) * u.Hz  # used for SSC
         nu_to_integrate = nu
@@ -338,6 +379,8 @@ class synchrotron:
     def synchro_self_absorption(self, nu, absorbing_blob, *args):
         """
         Computes the self absorption for the blobs standing between the emitting blob and the observer using agnpy method.
+
+        Returns attenuation factor.
         """
         tau = Synchrotron.evaluate_tau_ssa(nu, 
                                     absorbing_blob.z,
@@ -356,7 +399,7 @@ class ExtCompton:
     """
     Computes the external compton scattering for each blob using AGNpy.
     """
-    def __init__(self, blocklist, nu, targetlist = [], id_cmb = False):
+    def __init__(self, blocklist, nu, targetlist = [], id_cmb = False, mu_s = 0):
         """
         Parameters:
         --
@@ -365,6 +408,7 @@ class ExtCompton:
         targetlist :class:`~list[agnpy.targets]`:list of target over which the external compton is computed.
         id_cmb :class:`~boolean`: True/False whether to consider the CMB or not.
         """
+        self.mu_s = mu_s
 
         if id_cmb == False:
             self.total_sed = self.totalflux_no_cmb(blocklist, nu, targetlist)
@@ -376,28 +420,24 @@ class ExtCompton:
         Computes the EC emission - CMB included - over each blob and returns the total sed. 
         """
         totalsed = 0
-        i_ec = 0
-        i_cmb = 0
 
         for block in blocklist:
             sed_list = []
 
             if block.EC:
-                i_ec += 1
                 for target in targetlist:
-                    sed_list.append(ExternalCompton(block.blob, target, block.distance))
+                    ec_sed = ExternalCompton(block.blob, target, block.distance).sed_flux(nu)
+                    gamma_abs = Absorption(target, block.distance, z = block.redshift, mu_s = self.mu_s).absorption(nu)
+                    sed_list.append(ec_sed*gamma_abs)
                     
             if block.CMB:
-                i_cmb += 1
-                ec = ExternalCompton(block.blob, CMB(block.redshift), block.distance)
-                totalsed +=  self.lineofview(ec.sed_flux(nu), block)
+                ec = ExternalCompton(block.blob, CMB(block.redshift), block.distance).sed_flux(nu)
+                gamma_abs = Absorption(CMB(block.redshift), block.distance, block.redshift, mu_s = self.mu_s).absorption(nu)
+                totalsed +=  self.lineofview(ec*gamma_abs, block)
 
             for sed in sed_list:
-                sed1 = sed.sed_flux(nu)
-                totalsed += self.lineofview(sed1, block)
+                totalsed += self.lineofview(sed, block)
 
-        print('total CMB SED computed:', i_cmb)
-        print('total EC SED computed:', i_ec)
         return totalsed
     
     def totalflux_no_cmb(self, blocklist,nu, targetlist):
@@ -405,22 +445,20 @@ class ExtCompton:
         Computes the EC emission - NO CMB - over each blob and returns the total sed. 
         """
         totalsed = 0
-        i = 0
         for block in blocklist:
             
             sed_list = []
         
             if block.EC:
-                i += 1
                 for target in targetlist:
-                    sed_list.append(ExternalCompton(block.blob, target, block.distance))
+                    ec_sed = ExternalCompton(block.blob, target, block.distance).sed_flux(nu)
+                    gamma_abs = Absorption(target, block.distance, z = block.redshift).absorption(nu)
+                    sed_list.append(ec_sed*gamma_abs)
 
             for sed in sed_list:
-                sed1 = sed.sed_flux(nu)
                 
-                totalsed +=  self.lineofview(sed1, block)
+                totalsed +=  self.lineofview(sed, block)
 
-        print('total EC SED computed:', i)
         return totalsed
     
     def lineofview(self, sed, block):
