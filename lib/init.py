@@ -28,6 +28,65 @@ def check(id_check, config):
     else:
         return False
 
+def check_indexing(config):
+    try:
+        if config['blocks'] == 'all':
+            return
+        elif config['blocks'] == 'both':
+            quantity = {
+                'x_Min': 'cm',
+                'x_Max': 'cm',
+                'y_Min': 'cm',
+                'y_Max': 'cm',
+                'z_Min': 'cm',
+                'z_Max': 'cm', 
+                'pres_Min': 'cm-1 g s-2',
+                'pres_Max': 'cm-1 g s-2',
+                'dens_Min': 'g cm-3',
+                'dens_Max': 'g cm-3',
+                'energy_Min': 'erg',
+                'energy_Max': 'erg',
+                'T_Min': 'K',
+                'T_Max': 'K',
+            }
+            for key in quantity:
+                check_quantity(config, key, quantity[key])
+
+        elif config['blocks'] == 'phys_only':
+            quantity = {
+                'pres_Min': 'cm-1 g s-2',
+                'pres_Max': 'cm-1 g s-2',
+                'dens_Min': 'g cm-3',
+                'dens_Max': 'g cm-3',
+                'energy_Min': 'erg',
+                'energy_Max': 'erg',
+                'T_Min': 'K',
+                'T_Max': 'K',                
+            }
+            for key in quantity:
+                check_quantity(config, key, quantity[key])
+
+        elif config['blocks'] == 'coords_only':
+            quantity = {
+                'x_Min': 'cm',
+                'x_Max': 'cm',
+                'y_Min': 'cm',
+                'y_Max': 'cm',
+                'z_Min': 'cm',
+                'z_Max': 'cm', 
+            }
+            for key in quantity:
+                check_quantity(config, key, quantity[key])
+         
+        else:
+            sys.stderr.write("Error: can't understand 'blocks'.\n")
+            sys.exit(1)
+
+    except KeyError:
+        sys.stderr.write("Error: 'blocks' not specified.\n")
+        sys.exit(1)
+
+
 def check_emissions(id_check, config):
     """
     Checks if the emissions region needs to be computed or not. Returns config[id_check] = True if 'y' or 'yes', False otherwise.
@@ -152,7 +211,6 @@ def disc_reader(config):
     --
     config: :class:`~dictionary` dictionary containing the values needed;
     """
-    removelist = ['a', 'P_jet', 'eta', 'L_disc', 'R_g_unit', 'R_in', 'R_out']
     if 'M_BH' not in config:
         try:
             a = int(config['a']) 
@@ -238,8 +296,6 @@ def disc_reader(config):
             sys.stderr.write("Error: 'R_out' is missing.\n")
             sys.exit(1)
     
-    for key in removelist:
-        del config[key]
     if 'target_list' in config:
         config['target_list'].append(SSDisk(Mass_BlackHole, L_disc, eta, R_in, R_out))
     else:
@@ -321,12 +377,36 @@ def recap(config):
     phi = int(config['Obs_phi'].value*100)
     name = name+f'_At{theta:04d}p{phi:04d}'
 
-    config['name'] = name
-    print("The resulting plot will be called: "+ name+ ".png")
+    final_name = compute_final_name(name, config['file_saving_path'])
+
+    config['name'] = final_name
+    print("The resulting plot will be called: "+ final_name+ ".png")
     print("It will be saved in:", config['file_saving_path'])
     if not os.path.exists(config['file_saving_path']):
         os.makedirs(config['file_saving_path'])
     return config
+
+def compute_final_name(name, file_saving_path):
+    """
+    """
+    log_dir = 'logs/'
+    if not os.path.exists(log_dir):
+        os.mkdir(log_dir)
+    hidden_dir = 'logs/tmp/'
+    if not os.path.exists(hidden_dir):
+        os.mkdir(hidden_dir)
+
+    for number in range(0,1000):
+        final_name = name+f'_{number:04d}'
+        hidden_name = os.path.join(hidden_dir, 'tmp_'+final_name)
+        if not os.path.exists(hidden_name):
+            if not os.path.exists(os.path.join(file_saving_path, final_name + '.png')):
+                break
+    
+    f_hidden = open(hidden_name, 'x')
+    f_hidden.close()
+    return final_name
+
 
 def polishing(config):
     """
@@ -338,12 +418,9 @@ def polishing(config):
     config: :class:`~dictionary` dictionary containing the values needed;  
     """
     #removelist = ['Obs_theta', 'Obs_phi', 'nu_Min', 'nu_Max']
-    removelist = ['nu_Min', 'nu_Max']
     config['nu'] = np.logspace(config['nu_Min'], config['nu_Max'])*u.Hz
     config['ObsCoords'] = cs.spherical_to_cartesian(config['ObserverDistance'], config['Obs_theta'], config['Obs_phi'])
-
-    for key in removelist:
-        del config[key]
+    config['mu_s'] = np.cos(cs.angle_between_vectors(np.array([0,0,1]), config['ObsCoords']))
 
     config = recap(config)
     return config
@@ -425,17 +502,11 @@ def reader():
             sys.stderr.write("Error: 'file_saving_path' value not specified.\n")
             sys.exit(1)
 
+    check_indexing(config)
+
     floats = ['Z', 'mu_0', 'E_released', 'f_delta', 'nu_Min', 'nu_Max', 'gamma_Min']
 
     quantities = {
-        'pres_Min': 'cm-1 g s-2',
-        'pres_Max': 'cm-1 g s-2',
-        'dens_Min': 'g cm-3',
-        'dens_Max': 'g cm-3',
-        'energy_Min': 'erg',
-        'energy_Max': 'erg',
-        'T_Min': 'K',
-        'T_Max': 'K',
         'B': 'G',
         'ObserverDistance': 'cm',
         'Obs_theta': 'deg',

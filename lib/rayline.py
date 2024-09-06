@@ -109,11 +109,13 @@ class raytracing:
             blob_i.rayline(raypath, obs.name)
         return ray_flux
 
-def C_raytracing(target, blocklist, filename):
+def C_raytracing(target_list, blocklist, filename):
     """
     Computes raytracing using a C algorithm.
     
-    target :class: objects.target
+    target :class:`~tuple` of objects.target
+    blobslist :class:`~list` of blocks
+    filename :class:`~str` name of the simulation input file.
     """
 
     radius_unit = blocklist[0].radius.unit
@@ -125,50 +127,54 @@ def C_raytracing(target, blocklist, filename):
 
     c_script_path = "c_routines/exec/raytrace"
     abs_file_path = os.path.join(script_dir, c_script_path)
-    result = subprocess.run([abs_file_path, str(target.coords[0]), str(target.coords[1]), str(target.coords[2]), tmp_file_path], capture_output=True, text = True, check=True)
-    print(result.stdout)
+    for target in target_list:
+        result = subprocess.run([abs_file_path, str(target.coords[0]), str(target.coords[1]), str(target.coords[2]), tmp_file_path], capture_output=True, text = True, check=True)
+        #print(result.stdout)
 
-    output_path = os.path.join(script_dir, 'tmp_files/tmp_raytrace_o_' + filename + '.txt')
-    values = open(output_path, 'r').readlines()
-    if target.name == 'source':
-        for value, block in zip(values, blocklist):
-            block.rayline(float((value.split('\n')[0]))*radius_unit, target.name)
-    
-    #Debugging purpose
-    #hist_indices = []
-    #total_encounters = 0
-    if target.name == 'observer':
-        output_path_index = os.path.join(script_dir, 'tmp_files/tmp_indices_' + filename + '.txt')
-        values_index = open(output_path_index, 'r').readlines()
-        for value, line, block in zip(values, values_index, blocklist):
-            array = [int(x) for x in line.strip().split(",")]
-            # Debugging purpose
-            # if array[0] != -1:
-            #     hist_indices.append(len(array))
-            #     for number in array:
-            #         total_encounters += number
-            block.rayline(float((value.split('\n')[0]))*radius_unit, target.name, order_array = array)
+        output_path = os.path.join(script_dir, 'tmp_files/tmp_raytrace_o_' + filename + '.txt')
+        values = open(output_path, 'r').readlines()
+        if target.name == 'source':
+            for value, block in zip(values, blocklist):
+                block.rayline(float((value.split('\n')[0]))*radius_unit, target.name)
 
-        # Deleting tmp file
-        output_path_index = 'rm ' + output_path_index
-        subprocess.run([output_path_index], capture_output= True, shell=True)
+        #Debugging purpose
+        #hist_indices = []
+        #total_encounters = 0
+        if target.name == 'observer':
+            output_path_index = os.path.join(script_dir, 'tmp_files/tmp_indices_' + filename + '.txt')
+            values_index = open(output_path_index, 'r').readlines()
+            for value, line, block in zip(values, values_index, blocklist):
+                array = [int(x) for x in line.strip().split(",")]
+                # Debugging purpose
+                # if array[0] != -1:
+                #     hist_indices.append(len(array))
+                #     for number in array:
+                #         total_encounters += number
+                block.rayline(float((value.split('\n')[0]))*radius_unit, target.name, order_array = array)
 
-        # debugging purpose
-        
-        # import matplotlib.pyplot as plt
-        # n_bin = round(np.power(len(hist_indices),1/2))
-        # plt.hist(hist_indices, bins = n_bin)
-        # print(hist_indices)
-        # plt.xlabel('Valore')
-        # plt.ylabel('Frequenza')
-        # plt.title('total_'+ str(total_encounters)+'_'+filename)
-        # plt.savefig('hist_'+filename+'.png')
-        # plt.close()
+            # Deleting tmp file
+            output_path_index = 'rm ' + output_path_index
+            subprocess.run([output_path_index], capture_output= True, shell=True)
+
+            # debugging purpose
+
+            # import matplotlib.pyplot as plt
+            # n_bin = round(np.power(len(hist_indices),1/2))
+            # plt.hist(hist_indices, bins = n_bin)
+            # print(hist_indices)
+            # plt.xlabel('Valore')
+            # plt.ylabel('Frequenza')
+            # plt.title('total_'+ str(total_encounters)+'_'+filename)
+            # plt.savefig('hist_'+filename+'.png')
+            # plt.close()
+
+    # Deleting tmp raytrace input file
+    tmp_file_path = 'rm ' + tmp_file_path
+    subprocess.run([tmp_file_path], capture_output= True, shell=True)
 
 
-    # Deleting tmp file.
+    # Deleting tmp raytrace.c output file.
     output_path = 'rm ' + output_path
     subprocess.run([output_path], capture_output= True, shell=True)
-
 
 

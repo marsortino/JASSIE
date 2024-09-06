@@ -399,7 +399,7 @@ class ExtCompton:
     """
     Computes the external compton scattering for each blob using AGNpy.
     """
-    def __init__(self, blocklist, nu, targetlist = [], id_cmb = False, mu_s = 0):
+    def __init__(self, blocklist, nu, targetlist = [], id_cmb = False, mu_s = 0.3):
         """
         Parameters:
         --

@@ -84,13 +84,13 @@ def compute_EC_targetlist(blocklist, config, q):
     """
     Calls a core to compute the EC emission process.
     """
-    q.put(em.ExtCompton(blocklist, config['nu'], config['target_list'], id_cmb = config['id_cmb']).total_sed)
+    q.put(em.ExtCompton(blocklist, config['nu'], config['target_list'], id_cmb = config['id_cmb']).total_sed, config['mu_s'])
 
 def compute_EC(blocklist, config, q):
     """
     Calls a core to compute the EC emission in case there is only the CMB.
     """
-    q.put(em.ExtCompton(blocklist, config['nu'], id_cmb = config['id_cmb']).total_sed)
+    q.put(em.ExtCompton(blocklist, config['nu'], id_cmb = config['id_cmb'], mu_s = config['mu_s']).total_sed)
 
 def external_compton(blocklist, config):
     """
@@ -110,10 +110,8 @@ def external_compton(blocklist, config):
     total_EC_sed = 0
     print("Starting External Compton computation.")
     if 'target_list' in config:
-        if block_per_core == 0:
-            p = multiprocessing.Process(target=compute_EC_targetlist, args=(min_blocklist, config, q,))
-            p.start()
-            num_cores = 1
+        if block_per_core == 0 or num_cores == 1:
+            total_EC_sed += em.ExtCompton(blocklist, config['nu'], config['target_list'], id_cmb = config['id_cmb'], mu_s = config['mu_s']).total_sed
         else:
             for i in range(0, num_cores-1):
                 p = multiprocessing.Process(target=compute_EC_targetlist, args=(min_blocklist[i*block_per_core : (i+1)*block_per_core], config, q,))
@@ -121,11 +119,15 @@ def external_compton(blocklist, config):
             p = multiprocessing.Process(target=compute_EC_targetlist, args=(min_blocklist[(num_cores-1)*block_per_core:], config, q,))    
             p.start()
             p.join()
+
+            for i in range(num_cores):
+                total_EC_sed += q.get()
+
+
     else:
-        if block_per_core == 0:
-            p = multiprocessing.Process(target=compute_EC, args=(min_blocklist, config, q,))
-            p.start()
-            num_cores = 1
+        if block_per_core == 0  or num_cores == 1:
+            total_EC_sed += em.ExtCompton(blocklist, config['nu'], id_cmb = config['id_cmb'], mu_s = config['mu_s']).total_sed
+
         else:
             for i in range(0, num_cores-1):
                 p = multiprocessing.Process(target=compute_EC, args=(min_blocklist[i*block_per_core : (i+1)*block_per_core], config, q,))
@@ -133,8 +135,10 @@ def external_compton(blocklist, config):
             p = multiprocessing.Process(target=compute_EC, args=(min_blocklist[(num_cores-1)*block_per_core:], config, q,))    
             p.start()
             p.join()
+            
+            for i in range(num_cores):
+                total_EC_sed += q.get()
 
-    for i in range(num_cores):
-        total_EC_sed += q.get()
+
     return total_EC_sed
         

@@ -19,7 +19,37 @@ def MainIndex(data, config):
     config: :class:`~dictionary` dictionary containing the values needed;
     """
 
+    if config['blocks'] == 'all':
+        Index = np.unique(np.argwhere(data.DistanceSet>0))
+        return Index
+
+    elif config['blocks'] == 'phys_only':
+        Index = Index_quantities(data, config)
+
+    elif config['blocks'] == 'coords_only':
+        Index = Index_coords(data, config)
+    
+    elif config['blocks'] == 'both':
+        Index = Index_both(data, config)
+
+    Index_source =  np.unique(np.argwhere(data.DistanceSet>0))
+    Index = np.intersect1d(Index, Index_source)
+
+    if not np.any(Index):
+        print('No block satisfies the initial conditions.\n')
+        sys.exit(1)
+    print(Index)
+    print('all good.')
+    exit()
+    return Index
+
+def Index_quantities(data, config):
+    """
+    Returns the index of blocks that satisfy the physical conditions stated in config.txt
+    """
+
     n = len(data.TempSet[:,1,1,1])
+
     n_0 = np.zeros(n)
     density = np.zeros(n)
     pressure = np.zeros(n)
@@ -35,7 +65,7 @@ def MainIndex(data, config):
         n_0[i] = (np.mean((((data.DensSet[i,2:4,2:4,2:4])*data.units[2]/(mu_0*m_p*data.units[0]**3)).to(u.Unit('cm-3'))).value)) # Converted in cm^-3
         temp[i] = np.mean(data.TempSet[i,2:4,2:4,2:4])
         energy[i] = (np.mean(data.EnerSet[i, 2:4,2:4,2:4])*u.erg).value
-        distance_source[i] = np.sqrt(data.coordSet[i,0]**2+data.coordSet[i,1]**2+data.coordSet[i,2]**2)
+        distance_source[i] = data.DistanceSet[i].value
 
     IndexDens = np.unique(np.argwhere((density > config['dens_Min'].value) & (density < config['dens_Max'].value)))
     IndexPres = np.unique(np.argwhere((pressure > config['pres_Min'].value)& (pressure < config['pres_Max'].value)))
@@ -45,14 +75,64 @@ def MainIndex(data, config):
 
     Index1 = np.intersect1d(IndexDens, IndexPres)
     Index2 = np.intersect1d(IndexTemp, IndexEnergy)
-    Index_source = np.unique(np.argwhere(distance_source>0))
 
     Index = np.intersect1d(Index1, Index2)
-    Index = np.intersect1d(Index, Index_source)
 
-    if not np.any(Index):
-        print('No block satisfies the initial conditions.\n')
-        sys.exit(1)
+    return Index
+
+def Index_coords(data, config):
+    """
+    Returns the index of blocks that satisfy the spatial conditions stated in config.txt
+    """
+
+    IndexCoord1 = np.unique(np.argwhere((data.x >= config['x_min']) & (data.x <= config['x_max'])))
+    IndexCoord2 = np.unique(np.argwhere((data.y >= config['y_min']) & (data.x <= config['y_max'])))
+    IndexCoord3 = np.unique(np.argwhere((data.z >= config['z_min']) & (data.x <= config['z_max'])))
+
+    Index = np.intersect1d(np.intersect1d(IndexCoord1, IndexCoord2), IndexCoord3)
+
+    return Index
+
+def Index_both(data, config):
+    """
+    Returns the index of blocks that satisfy both the spatial and physical conditions stated in config.txt
+    """
+
+    n = len(data.TempSet[:,1,1,1])
+    n_0 = np.zeros(n)
+    density = np.zeros(n)
+    pressure = np.zeros(n)
+    energy = np.zeros(n)
+    temp = np.zeros(n)
+    distance_source = np.zeros(n)
+
+
+    mu_0 = config['mu_0']
+    
+    for i in range(n):
+        density[i] = (np.mean((data.DensSet[i,2:4,2:4,2:4]*data.units[2]/(data.units[0]**3)).to(u.Unit('g cm-3'))).value)
+        pressure[i] = ((np.mean(data.PresSet[i, 2:4,2:4,2:4]*data.units[2]/(data.units[0]*data.units[1]**2)).to(u.Unit('g cm-1 s-2'))).value)
+        n_0[i] = (np.mean((((data.DensSet[i,2:4,2:4,2:4])*data.units[2]/(mu_0*m_p*data.units[0]**3)).to(u.Unit('cm-3'))).value)) # Converted in cm^-3
+        temp[i] = np.mean(data.TempSet[i,2:4,2:4,2:4])
+        energy[i] = (np.mean(data.EnerSet[i, 2:4,2:4,2:4])*u.erg).value
+        distance_source[i] = data.DistanceSet[i].value
+
+    IndexDens = np.unique(np.argwhere((density > config['dens_Min'].value) & (density < config['dens_Max'].value)))
+    IndexPres = np.unique(np.argwhere((pressure > config['pres_Min'].value)& (pressure < config['pres_Max'].value)))
+
+    IndexTemp = np.unique(np.argwhere((temp> config['T_Min'].value) & (temp < config['T_Max'].value)))
+    IndexEnergy = np.unique(np.argwhere((energy > config['energy_Min'].value)& (energy < config['energy_Max'].value)))
+
+    IndexCoord1 = np.unique(np.argwhere((data.x >= config['x_min']) & (data.x <= config['x_max'])))
+    IndexCoord2 = np.unique(np.argwhere((data.y >= config['y_min']) & (data.x <= config['y_max'])))
+    IndexCoord3 = np.unique(np.argwhere((data.z >= config['z_min']) & (data.x <= config['z_max'])))
+
+    Index1 = np.intersect1d(IndexDens, IndexPres)
+    Index2 = np.intersect1d(IndexTemp, IndexEnergy)
+    Index3 = np.intersect1d(np.intersect1d(IndexCoord1, IndexCoord2), IndexCoord3)
+
+    Index = np.intersect1d(np.intersect1d(Index1, Index2), Index3)
+
     return Index
 
 

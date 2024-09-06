@@ -6,8 +6,11 @@ import astropy.units as u
 from astropy.constants import e, m_e, c, h, k_B, sigma_T
 from scipy.special import gamma, factorial 
 import lib.conversions as cs
+from agnpy.utils.math import phi_to_integrate
+from agnpy.utils.conversion import to_R_g_units
 
 import os
+import datetime
 
 from decimal import getcontext, Decimal
 
@@ -82,10 +85,10 @@ class datamap:
         """
 
         ObserverDistance = ObserverDistance.to(u.cm)
-        z = self.coordSet[:,2]*GridUnit
-        y = self.coordSet[:,1]*GridUnit
-        x = self.coordSet[:,0]*GridUnit
-        return (np.sqrt(x**2+(ObserverDistance-y)**2 + z**2)).to(u.cm)
+        self.z = self.coordSet[:,2]*GridUnit
+        self.y = self.coordSet[:,1]*GridUnit
+        self.x = self.coordSet[:,0]*GridUnit
+        return (np.sqrt(self.x**2+(ObserverDistance-self.y)**2 + self.z**2)).to(u.cm)
 
     def timestep(self, parameterpointer):
         """
@@ -401,3 +404,332 @@ def BlocklistTXT(blocklist, filename):
         block_list.write('\n'+str(block.x)+' '+str(block.y)+' '+str(block.z)+' '+str(block.radius.value))
 
     block_list.close()
+
+
+def write_log(config, time_table, n_blocks):
+    """
+    Writes a final log containing the parameters used for the computation.
+    
+    Parameters:
+    --
+    config :class: `~dictionary`: contains all initial settings.
+    time_table :class: `~dictionary`: contains total time for each computation. 
+    n_blocks :class: `~int`: total number of blocks
+    """
+    log_dir = 'logs/'
+
+    final_log_name = 'log_'+config['name']+'.txt'
+    final_log_name = os.path.join(log_dir, final_log_name)
+
+    key_list = {
+        "Launch Settings": ('id_launch', 'num_cores', 'qhull_depth'),
+        "Jet Settings": ('n_e', 'p', 'gamma_Min', 'B', 'Z', 'mu_0', 'E_released', 'f_delta'),
+        "Plot Settings": ('nu_Min', 'nu_Max', 'ObserverDistance', 'Obs_theta', 'Obs_phi'),
+        "Unit Settings": ('DistanceUnit', 'TimeUnit', 'MassUnit', 'GridUnit'),
+    }
+    
+    disc_settings = [
+        'L_disc',
+        'eta',
+        'R_g_unit',
+        'R_in',
+        'R_out',
+    ]
+
+
+    f_log = open(final_log_name, 'x')
+    f_log.write('Recap of file ' + str(config['name']) + ':\n')
+    
+    if config['blocks'] == 'all':
+        f_log.write('Blocks selected: all\n')
+    elif config['blocks'] == 'both':
+        write_blocks_both(f_log, config)
+    elif config['blocks'] == 'phys_only':
+        write_log_physical_quantities(f_log, config)
+    elif config['blocks'] == 'coords_only':
+        write_log_physical_quantities(f_log, config)
+    f_log.write('for a total number of blocks of ' + str(n_blocks) + '.\n')
+    f_log.write('Processes considered:\n')
+    if config['id_brem']:
+        f_log.write('-- Bremmstralung\n')
+    if config['id_syn']:
+        f_log.write('-- Synchrotron\n')
+        if config['id_ssa']:
+            f_log.write('-- -- Self Absorption\n')
+        if config['id_ssc']:
+            f_log.write('-- -- Self Compton\n')
+    if config['id_ec']:
+        f_log.write('-- External Compton\n')
+        if config['id_cmb']:
+            f_log.write('-- -- CMB\n')
+        if config['id_disc']:
+            f_log.write('-- -- Disc\nDisc Settings:\n')
+            
+            if 'M_BH' in config:
+                f_log.write('M_BH: ' + str(config['M_BH']) + '\n')
+            else:
+                f_log.write('a: ' + str(config['a']) + '\n')
+                f_log.write('P_jet: ' + str(config['P_jet']) + '\n')
+
+            for key in disc_settings:
+                f_log.write(str(key)+": " + str(config[key]) + '\n')
+
+    for key in key_list:
+        f_log.write(str(key) + '\n')
+        for input in key_list[key]:
+            f_log.write(str(input)+': '+ str(config[input]) + '\n')
+
+    f_log.write('Timings:\n')
+    for key in time_table:
+        f_log.write('-- ' +key + ': ' + str(time_table[key]) + '\n')
+
+
+    f_log.write('-----------------------')
+    date = datetime.datetime.now()
+    f_log.write("Current time: %s/%s/%s, %s:%s:%s" %(date.year, date.month, date.day, date.hour, date.minute, date.second))
+    f_log.write('-----------------------')
+    f_log.close()
+
+def clean(name):
+    """
+    Removes some temporary files.
+    """
+    hidden_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'logs/tmp/')
+    hidden_file_name = os.path.join(hidden_dir, 'tmp_' + name)
+    try:
+        os.remove(hidden_file_name)
+        print('Cleaned.')
+    except FileNotFoundError:
+        print('Cannot find ' +'tmp_'+name+' which is strange.')
+        print('Code may have still worked, however be wary of overwriting issues if different setups of same input file have been launched together.')
+
+def write_blocks_both(file_pointer, config):
+    """
+    Writes on final log files both physical quantities and coordinates used for blocks selecting
+    """
+
+    quantity = [
+        'x_Min',
+        'x_Max',
+        'y_Min',
+        'y_Max',
+        'z_Min',
+        'z_Max',
+        'pres_Min',
+        'pres_Max',
+        'dens_Min',
+        'dens_Max',
+        'energy_Min',
+        'energy_Max',
+        'T_Min',
+        'T_Max',
+    ]
+
+    file_pointer.write('Blocks selected both physical quantities and coordinates:\n')
+    
+    for parameter in quantity:
+        file_pointer.write(parameter+': '+str(config[parameter])+'\n')
+
+def write_log_physical_quantities(file_pointer, config):
+    """
+    Writes on final log files physical quantities used for blocks selecting
+
+    """
+    quantity = [
+        'pres_Min',
+        'pres_Max',
+        'dens_Min',
+        'dens_Max',
+        'energy_Min',
+        'energy_Max',
+        'T_Min',
+        'T_Max',
+    ]
+    file_pointer.write('Blocks selected based on physical quantities:\n')
+    for parameter in quantity:
+        file_pointer.write(parameter+': '+str(config[parameter])+'\n')
+
+def write_log_coords(file_pointer, config):
+    """
+    Writes on final log files coordinates used for blocks selecting
+    """
+
+    quantity = [
+        'x_Min',
+        'x_Max',
+        'y_Min',
+        'y_Max',
+        'z_Min',
+        'z_Max',
+    ]
+
+    file_pointer.write('Blocks selected based on coordinates:\n')
+    for parameter in quantity:
+        file_pointer.write(parameter+': '+str(config[parameter])+'\n')
+
+
+# class absorption:
+#     """
+    
+#     """
+#     def __init__(self, target, r=None, z=0, mu_s =1):
+#         self.target = target
+#         self.r = r
+#         self.z = z
+#         self.mu_s = mu_s
+#         self.set_mu()
+#         self.set_phi()
+#         self.set_l()
+
+#     def set_mu(self, mu_size=100):
+#         self.mu_size = mu_size
+#         self.mu = np.linspace(-1, 1, self.mu_size)
+
+#     def set_phi(self, phi_size=50):
+#         "Set array of azimuth angles to integrate over"
+#         self.phi_size = phi_size
+#         self.phi = np.linspace(0, 2 * np.pi, self.phi_size)
+
+#     def set_l(self, l_size=50):
+#         self.l_size = l_size
+
+#     def evaluate_tau_ss_disk_mu_s(
+#             nu,
+#             z,
+#             mu_s,
+#             M_BH,
+#             L_disk,
+#             eta,
+#             R_in,
+#             R_out,
+#             r,
+#             R_tilde_size = 100,
+#             l_tilde_size = 50,
+#             phi = phi_to_integrate,
+#     ):
+#         """Evaluates the gamma-gamma absorption produced by the photon field of
+#         a Shakura-Sunyaev accretion disk
+
+#         Parameters
+#         ----------
+#         nu : :class:`~astropy.units.Quantity`
+#             array of frequencies, in Hz, to compute the opacity
+#             **note** these are observed frequencies (observer frame)
+#         z : float
+#             redshift of the source
+#         mu_s : float
+#             cosine of the angle between the blob motion and the jet axis
+#         M_BH : :class:`~astropy.units.Quantity`
+#             Black Hole mass
+#         L_disk : :class:`~astropy.units.Quantity`
+#             luminosity of the disk
+#         eta : float
+#             accretion efficiency
+#         R_in : :class:`~astropy.units.Quantity`
+#             inner disk radius
+#         R_out : :class:`~astropy.units.Quantity`
+#             inner disk radius
+#         R_tilde_size : int
+#             size of the array of disk coordinates to integrate over
+#         r : :class:`~astropy.units.Quantity`
+#             distance between the point source and the blob
+#         l_tilde_size : int
+#             size of the array of distances from the BH to integrate over
+#         phi : :class:`~numpy.ndarray`
+#             array of azimuth angles to integrate over
+
+#         Returns
+#         -------
+#         :class:`~astropy.units.Quantity`
+#             array of the tau values corresponding to each frequency
+#         """
+#         # conversions
+#         R_g = (G * M_BH / c ** 2).to("cm")
+#         r_tilde = to_R_g_units(r, M_BH)
+#         R_in_tilde = to_R_g_units(R_in, M_BH)
+#         R_out_tilde = to_R_g_units(R_out, M_BH)
+
+
+
+
+#     def evaluate_tau_blr_mu_s(
+#         nu,
+#         z,
+#         mu_s,
+#         L_disk,
+#         xi_line,
+#         epsilon_line,
+#         R_line,
+#         r,
+#         u_size=100,
+#         mu=mu_to_integrate,
+#         phi=phi_to_integrate,
+#     ):
+#         """Evaluates the gamma-gamma absorption produced by a spherical shell
+#         BLR for a general set of model parameters and arbitrary mu_s
+
+#         Parameters
+#         ----------
+#         nu : :class:`~astropy.units.Quantity`
+#             array of frequencies, in Hz, to compute the tau
+#             **note** these are observed frequencies (observer frame)
+#         z : float
+#             redshift of the source
+#         mu_s : float
+#             cosine of the angle between the blob motion and the jet axis
+#         L_disk : :class:`~astropy.units.Quantity`
+#             Luminosity of the disk whose radiation is being reprocessed by the BLR
+#         xi_line : float
+#             fraction of the disk radiation reprocessed by the BLR
+#         epsilon_line : string
+#             dimensionless energy of the emitted line
+#         R_line : :class:`~astropy.units.Quantity`
+#             radius of the BLR spherical shell
+#         r : :class:`~astropy.units.Quantity`
+#             distance between the Broad Line Region and the blob
+#         l_size : int
+#             size of the array of distances from the BH to integrate over
+#         mu, phi : :class:`~numpy.ndarray`
+#             arrays of cosine of zenith and azimuth angles to integrate over
+
+#         Returns
+#         -------
+#         :class:`~astropy.units.Quantity`
+#             array of the tau values corresponding to each frequency
+#         """
+#         # conversions
+#         epsilon_1 = nu_to_epsilon_prime(nu, z)
+#         # multidimensional integration
+#         # here uu is the distance that the photon traversed
+#         uu = np.logspace(-5, 5, u_size) * r
+
+#         # check if for any uu value the position of the photon is too close to the BLR
+#         x_cross = np.sqrt(r ** 2 + uu ** 2 + 2 * uu * r * mu_s)
+#         idx = np.isclose(x_cross, R_line, rtol=min_rel_distance)
+#         if idx.any():
+#             uu[idx] += min_rel_distance * R_line
+#             # it might happen that some of the points get more shifted then the next one,
+#             # possibly making integration messy, so we sort the points
+#             uu = np.sort(uu)
+
+#         _mu_re, _phi_re, _u, _epsilon_1 = axes_reshaper(mu, phi, uu, epsilon_1)
+
+#         # distance between soft photon and gamma ray
+#         x = x_re_shell_mu_s(R_line, r, _phi_re, _mu_re, _u, mu_s)
+
+#         # convert the phi and mu angles of the position in the sphere into the actual phi and mu angles
+#         # the actual phi and mu angles of the soft photon catching up with the gamma ray
+#         _phi, _mu_star = phi_mu_re_shell(R_line, r, _phi_re, _mu_re, _u, mu_s)
+
+#         # angle between the soft photon and gamma ray
+#         _cos_psi = cos_psi(mu_s, _mu_star, _phi)
+#         s = _epsilon_1 * epsilon_line * (1 - _cos_psi) / 2
+#         integrand = (1 - _cos_psi) / x ** 2 * sigma(s)
+#         # integrate
+#         integral_mu = np.trapz(integrand, mu, axis=0)
+#         integral_phi = np.trapz(integral_mu, phi, axis=0)
+#         integral = np.trapz(integral_phi, uu, axis=0)
+#         prefactor = (L_disk * xi_line) / (
+#             (4 * np.pi) ** 2 * epsilon_line * m_e * c ** 3
+#         )
+#         return (prefactor * integral).to_value("")
