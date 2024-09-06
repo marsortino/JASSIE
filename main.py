@@ -16,9 +16,6 @@ import lib.emission as em
 import lib.parallelize as pl
 
 
-
-
-
 # //*************************************
 # DATA READER
 sets = init.reader()
@@ -46,6 +43,7 @@ if speed_up_test:
     ftime.write("num_cores: " + str(sets['num_cores']) + "\n")
 # ************************************//
 
+time_table = {}
 initial_time = time.time()
 
 # //*************************************
@@ -54,6 +52,7 @@ start_time = time.time()
 index = ind.MainIndex(data, sets)
 end_time = time.time()
 print('Index complete in', "{:.2f}".format(end_time-start_time), 'seconds.')
+time_table['index'] = end_time-start_time
 # *************************************//
 
 # //*************************************
@@ -71,6 +70,7 @@ negativelist = pointlist[index_negative_blocks]
 blocklist = builder.blockbuilder(index, data)
 end_time = time.time()
 print('Blocks built in', "{:.2f}".format(end_time-start_time), 'seconds.')
+time_table['blocks'] = end_time-start_time
 if speed_up_test:
     ftime.write("num_cores: " + str(len(blocklist)) + "\n")
 
@@ -80,6 +80,7 @@ if speed_up_test:
 # QUICKHULL
 start_time = time.time()
 qh_checker = 0
+
 if sets['id_cmb']:
     m.sphere(positivelist, blocklist, sets['qhull_depth'])
     m.sphere(negativelist, blocklist, sets['qhull_depth'])
@@ -93,7 +94,10 @@ if sets['id_disc'] == 'y' or sets['id_disc'] == 'yes':
 end_time = time.time()
 
 if qh_checker != 0:
-    print("QH in:", "{:.2f}".format(end_time-start_time), 'seconds.')
+    print("QuickHull in:", "{:.2f}".format(end_time-start_time), 'seconds.')
+    time_table['quickhull'] = end_time-start_time
+else:
+    time_table['quickhull'] = 0
 # *************************************//
 
 # //*************************************
@@ -102,10 +106,11 @@ start_time = time.time()
 m.BlocklistTXT(blocklist, sets['name'])
 src = o.target('source', np.array([0.0,0.0,0.0]))
 obs = o.target('observer', sets['ObsCoords'])
-rl.C_raytracing(src, blocklist, sets['name'])
-rl.C_raytracing(obs, blocklist, sets['name'])
-end_time = time.time()   
+rl.C_raytracing((src , obs), blocklist, sets['name'])
+end_time = time.time()
 print('Raytracing complete in', "{:.2f}".format(end_time-start_time), 'seconds.')
+time_table['raytracing'] = end_time-start_time
+
 # *************************************
 
 # //*************************************
@@ -118,6 +123,8 @@ else:
     energies.EnergyComputer(blocklist, data.dtmin, cmb = sets['id_cmb'])
 end_time = time.time()
 print('Energy computed in', "{:.2f}".format(end_time-start_time), 'seconds.')
+time_table['energy'] = end_time-start_time
+
 # *************************************//
 
 # //*************************************
@@ -126,6 +133,8 @@ start_time = time.time()
 builder.blobbuilder(blocklist)
 end_time = time.time()
 print('Bloblist built in', "{:.2f}".format(end_time-start_time), 'seconds.')
+time_table['blobs_built'] = end_time-start_time
+
 # *************************************//
 
 
@@ -140,6 +149,8 @@ if sets['id_brem']:
     sed_per_emission_process['id_brem'] = sed_value
     end_time = time.time()
     print('Bremmstrahlung computed in', "{:.2f}".format(end_time-start_time), 'seconds.')
+    time_table['Bremmstrahlung'] = end_time-start_time
+
     # *************************************//
 
 
@@ -151,6 +162,8 @@ if sets['id_syn']:
     sed_per_emission_process['id_syn'] = sed_value
     end_time = time.time()
     print('Synchrotron computed in',"{:.2f}".format(end_time-start_time), 'seconds.')
+    time_table['Synchrotron'] = end_time-start_time
+
     if speed_up_test:
         ftime.write('SYN: ' + str(end_time-start_time) + '\n')
 
@@ -164,11 +177,13 @@ if sets['id_ec']:
     sed_per_emission_process['id_ec'] = sed_value
     end_time = time.time()
     print('External Compton computed in', "{:.2f}".format(end_time-start_time), 'seconds.')
+    time_table['External_Compton'] = end_time-start_time
     if speed_up_test:
         ftime.write('ExC: ' + str(end_time-start_time))
 
 # #     # *************************************//
-ftime.close()
+if speed_up_test:
+    ftime.close()
 
 ## PLOTTING
 load_mpl_rc()
@@ -191,10 +206,18 @@ plt.title(sets['name'] + ' final')
 plt.savefig(sets['file_saving_path']+'/'+sets['name']+'_final.png')
 plt.close()
 
+
 # Final Output
 total_time = time.time()
 elapsed_time = total_time - initial_time
 minutes = int(elapsed_time // 60)
 seconds = int(elapsed_time % 60)
+
+time_table['final_time'] = elapsed_time
+m.write_log(sets, time_table, len(blocklist))
+
+m.clean(sets['name'])
+
 print("Done!")
 print('In: ', minutes, 'minutes and', seconds, 'seconds.')
+
