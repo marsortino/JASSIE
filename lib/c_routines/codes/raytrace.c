@@ -35,12 +35,11 @@ void check_duplicates(block_distance* distance_sorted, int size);
 
 
 int main(int argc, char *argv[]){
-	
 	if (argc != 5){
 		fprintf(stderr, "Usage: %s <observer.x observer.y observer.z tmp_file_path>\n", argv[0]);
 		return 1;
 	}
-	printf("Starting...\n");
+	//printf("Starting raytrace procedures...\n");
 
 	clock_t start_t, end_t;
 	double total_t;
@@ -57,16 +56,12 @@ int main(int argc, char *argv[]){
 	source.z = strtod(argv[3], NULL);
 
 	char file_path[500];
-
 	strcpy(file_path, argv[4]);
-
 
 	list_raytrace = fopen(file_path, "r");
 
 	fscanf(list_raytrace, "%i", &max);	
-
 	blocklist = malloc(max*sizeof(block));
-
 	while(!feof(list_raytrace)){
 
 		fscanf(list_raytrace, "%le %le %le %le", &blocklist[i].center.x, &blocklist[i].center.y, &blocklist[i].center.z, &blocklist[i].r); 
@@ -76,26 +71,21 @@ int main(int argc, char *argv[]){
 	fclose(list_raytrace);
 
 	raytrace = malloc(max*sizeof(long double));
-
 	char *filename = get_file_name(file_path);
 	int str_lenght =  strlen(filename);
-
-	char *outputname_rt = (char *)malloc(str_lenght+29 * sizeof(char)); // +15 because tmp_raytrace_o_ are 14 chars.
+	char *outputname_rt = (char *)malloc((str_lenght+29+1) * sizeof(char)); // +15 because tmp_raytrace_o_ are 14 chars.
 	strcpy(outputname_rt, "lib/tmp_files/tmp_raytrace_o_");
 	strcat(outputname_rt, filename);
-
-	char *outputname_indx = (char *)malloc(str_lenght+26 *sizeof(char));
+	char *outputname_indx = (char *)malloc((str_lenght+26+1) *sizeof(char));
 	strcpy(outputname_indx, "lib/tmp_files/tmp_indices_");
 	strcat(outputname_indx, filename);
-	
+
 	distance_array = malloc(max*sizeof(block_distance));
 
 	list_raytrace = fopen(outputname_rt, "w");
 	list_index = fopen(outputname_indx, "w");
 	psphere_counter = &sphere_counter;
 	psphere_counter_max = &sphere_counter_max;
-
-
 
 	for(i=0; i<max; i++){
 		sphere_counter = 0;
@@ -119,7 +109,7 @@ int main(int argc, char *argv[]){
 	free(raytrace);
 
 	total_t = (double)(end_t-start_t)/CLOCKS_PER_SEC;
-	printf("Raytrace total time: %f\n", total_t);	
+	// printf("Raytrace total time: %f\n", total_t);	
 	return 0;
 }
 
@@ -288,7 +278,6 @@ char* get_file_name(char* filepath){
         // If no '/' was found, the entire path is the filename
         filename = filepath;
     }
-
     // Print the filename
 	filename = filename + 15; 
 	return filename;
