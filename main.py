@@ -15,7 +15,6 @@ import lib.objects as o
 import lib.emission as em
 import lib.parallelize as pl
 
-
 # //*************************************
 # DATA READER
 sets = init.reader()
@@ -193,15 +192,24 @@ final_sed = 0
 for key in sed_per_emission_process.keys():
     plot_sed(sets['nu'], sed_per_emission_process[key], label=key[3:])
     final_sed += sed_per_emission_process[key]
+    print(final_sed)
 # SED taking into account emission process
 plot_sed(sets['nu'], final_sed, label='total flux')
-plt.ylim([1e-15, (max(final_sed)*10).value])
+y_max = (max(final_sed)*10).value
+y_min = 1e-35
+if y_max < y_min:
+    print('Error, the minimum threshold provided for the output is too high.\n Max value found is higher than threshold value.')
+    print('Max value of the flux: ', y_max)
+    print('Lower threshold provided: ', y_min)
+    print('Manually putting as lower threshold Max*1e-15: ', y_max*1e-15)
+    y_min = y_max*1e-15
+plt.ylim([y_min, y_max])
 plt.title(sets['name'])
 plt.savefig(sets['file_saving_path']+'/'+sets['name']+'.png')
 plt.close()
 # SED with only the final flux
 plot_sed(sets['nu'], final_sed, label='total_flux')
-plt.ylim([1e-15, (max(final_sed)*10).value])
+plt.ylim([y_min, y_max])
 plt.title(sets['name'] + ' final')
 plt.savefig(sets['file_saving_path']+'/'+sets['name']+'_final.png')
 plt.close()
@@ -214,7 +222,7 @@ minutes = int(elapsed_time // 60)
 seconds = int(elapsed_time % 60)
 
 time_table['final_time'] = elapsed_time
-m.write_log(sets, time_table, len(blocklist))
+m.write_log(sets, time_table, len(blocklist), final_sed)
 
 m.clean(sets['name'])
 
