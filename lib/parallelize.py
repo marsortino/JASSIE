@@ -1,4 +1,5 @@
 import lib.emission as em
+import lib.emission_debug as em_debug
 import multiprocessing
 import os
 
@@ -52,7 +53,7 @@ def synchro(blocklist, config):
     block_per_core = len_blocklist // num_cores
     whole_blocklist = blocklist
     if block_per_core == 0 or num_cores == 1:
-        total_synchro_sed = em.synchrotron(blocklist, config, blocklist).total_sed
+        total_synchro_sed = em_debug.synchrotron(blocklist, config, blocklist).total_sed
     else:
         q = multiprocessing.Queue()
         for i in range(0, num_cores-1):
