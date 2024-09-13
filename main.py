@@ -195,8 +195,9 @@ for key in sed_per_emission_process.keys():
     print(final_sed)
 # SED taking into account emission process
 plot_sed(sets['nu'], final_sed, label='total flux')
-y_max = (max(final_sed)*10).value
-y_min = 1e-35
+if sets['yplot_max'] == 'auto':
+    y_max = (max(final_sed)*10).value
+y_min = sets['yplot_min']
 if y_max < y_min:
     print('Error, the minimum threshold provided for the output is too high.\n Max value found is higher than threshold value.')
     print('Max value of the flux: ', y_max)
