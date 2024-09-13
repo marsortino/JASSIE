@@ -530,9 +530,15 @@ def reader():
             check_float(config, 'p1')
             check_float(config, 'p2')
             check_float(config, 'gamma_B')
+        elif config['n_e'] == 'PowerLaw_LinearGradient':
+            check_float(config, 'p_min')
+            check_float(config, 'p_max')
         else:
             sys.stderr.write("Error: No power-law distribution function has been stated.\n")
-            sys.stderr.write("       Available options are 'n_e = PowerLaw' -> 'p = ..' and 'n_e = BrokenPowerLaw' -> 'p1 = ..', 'p2 = ..'\n")
+            sys.stderr.write("       Available options are:")
+            sys.stderr.write("                 - 'n_e = PowerLaw' -> 'p = ..' \n")
+            sys.stderr.write("                 - ''n_e = BrokenPowerLaw' -> 'p1 = ..', 'p2 = ..'\n")
+            sys.stderr.write("                 - 'PowerLaw_LinearGradient -> 'p_min = ..', 'p_max = ..'")
             sys.exit(1)
     except KeyError:
         sys.stderr.write("Error: 'n_e' is missing.\n")
@@ -559,6 +565,18 @@ def reader():
     if config['num_cores'] <= 0:
         sys.stderr.write("Error: num_cores must be a positive scalar.\n")
         sys.exit(1)
+
+    if config['yplot_max'] != 'auto':
+        try:
+            config['yplot_max'] = float(config['yplot_max'])
+        except ValueError:
+            sys.stderr.write("Error: " + "yplot_max" + " must be either a float or 'auto'.\n")
+            sys.exit(1)
+        except KeyError:
+            sys.stderr.write("Error: " + "yplot_max" + " is missing.\n")
+            sys.exit(1)
+
+    check_float(config, 'yplot_min')
 
     config = polishing(config)
 

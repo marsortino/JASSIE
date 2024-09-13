@@ -41,6 +41,10 @@ class Block_Energy:
             self.p1 = config['p1']
             self.p2 = config['p2']
             self.gamma_b = config['gamma_B']
+        elif config['n_e'] == 'PowerLaw_LinearGradient':
+            self.n_e = 'PowerLaw_LinearGradient'
+            self.p_min = config['p_min']
+            self.p_max = config['p_max']
         self.E_released = config['E_released']
         self.f_delta = config['f_delta']
         self.gamma_min = config['gamma_Min']
@@ -247,7 +251,15 @@ class Block_Energy:
             for block in blocklist:
                 self.E_initial(block)
                 self.E_final(block, dtmin, targetlist, cmb)
-                self.ElectronDistribution_BPL(self.K_eNormalizer(block), block)            
+                self.ElectronDistribution_BPL(self.K_eNormalizer(block), block)
+            
+        elif self.n_e == 'PowerLaw_LinearGradient':
+            p_array = self.get_linear_gradient(blocklist)
+            self.n_e = 'PowerLaw'
+            for block, p in zip(blocklist, p_array):
+                self.E_initial(block)
+                self.E_final(block, dtmin, targetlist, cmb)
+                self.ElectronDistribution_PL_LinearGradient(self.K_eNormalizerLG(block, p), block, p)
         
     def K_eNormalizer(self, block):
         """
@@ -260,12 +272,26 @@ class Block_Energy:
         if integral == 0:
             K_e = 0*u.Unit('cm-3')
         else:
-            #K_e = (block.dens/(integral*self.mu_0*(m_p.to(u.g)))).to('cm-3')
+            K_e = (block.dens/(integral*self.mu_0*(m_e.to(u.g)))).to('cm-3')
+        return K_e
+
+    def K_eNormalizerLG(self, block, p):
+        """
+        Normalizes the K_e emission for each blob in case of p being linear gradient
+
+            K_e = rho/(integral_{E_min}^{E_final} N(E)dE * mu_0 m_p)
+        """
+
+        integral = (block.E_f**(-p+1)-self.gamma_min**(-p+1))/(-p+1)
+        if integral == 0:
+            K_e = 0*u.Unit('cm-3')
+        else:
             K_e = (block.dens/(integral*self.mu_0*(m_e.to(u.g)))).to('cm-3')
         return K_e
 
 
-    def ElectronDistribution_PL(self, K_e, block):
+
+    def ElectronDistribution_PL(self, K_e, block,):
         """
         Computes the electron distribution function n_e in case of a Power Law d.f..
         Returns n_e and n_e_value for n_e((E_f+gamma_min)/2)
@@ -298,3 +324,40 @@ class Block_Energy:
         )
         n_e_values = nelectrons((block.E_f+self.gamma_min)/2)
         block.electronic_distribution(K_e, nelectrons, n_e_values)
+    
+    def ElectronDistribution_PL_LinearGradient(self, K_e, block, p):
+        nelectrons = PowerLaw(
+            k = K_e,
+            p = p,
+            gamma_min = self.gamma_min,
+            gamma_max = block.E_f,
+            mass = m_e
+        )
+        n_e_values = nelectrons((block.E_f+self.gamma_min)/2)
+        block.electronic_distribution(K_e, nelectrons, n_e_values)
+
+    def get_linear_gradient(self, blocklist):
+        """
+        """
+        n_block = len(blocklist)
+
+        z_min = np.abs(blocklist[0].z)
+        z_max = z_min+1
+
+        for i in range(1, n_block):
+                block_z = np.abs(blocklist[i].z)
+                if z_min > block_z:
+                    z_min = block_z
+                elif z_max < block_z:
+                    z_max = block_z
+    
+        print('z_min:', z_min)
+        print('z_max:', z_max)
+
+        p_array = []
+        for i in range(0, n_block):
+            block_z = np.abs(blocklist[i].z)
+            p_array.append(self.p_min + (self.p_max - self.p_max)*(block_z - z_min)/(z_max - z_min))
+        
+
+        return p_array

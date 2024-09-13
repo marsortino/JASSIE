@@ -107,6 +107,7 @@ class datamap:
                 i+=1 
         return float(parameterpointer[i][1])
 
+
 class tinymap:
         def __init__(self, config):
             self.read_data(config)
@@ -406,7 +407,7 @@ def BlocklistTXT(blocklist, filename):
     block_list.close()
 
 
-def write_log(config, time_table, n_blocks):
+def write_log(config, time_table, n_blocks, final_flux):
     """
     Writes a final log containing the parameters used for the computation.
     
@@ -423,7 +424,7 @@ def write_log(config, time_table, n_blocks):
 
     key_list = {
         "Launch Settings": ('id_launch', 'num_cores', 'qhull_depth'),
-        "Jet Settings": ('n_e', 'p', 'gamma_Min', 'B', 'Z', 'mu_0', 'E_released', 'f_delta'),
+        "Jet Settings": ('n_e', 'p_min', 'p_max', 'gamma_Min', 'B', 'Z', 'mu_0', 'E_released', 'f_delta'),
         "Plot Settings": ('nu_Min', 'nu_Max', 'ObserverDistance', 'Obs_theta', 'Obs_phi'),
         "Unit Settings": ('DistanceUnit', 'TimeUnit', 'MassUnit', 'GridUnit'),
     }
@@ -483,6 +484,14 @@ def write_log(config, time_table, n_blocks):
     for key in time_table:
         f_log.write('-- ' +key + ': ' + str(time_table[key]) + '\n')
 
+    i = 0
+    f_log.write('Final Flux (in '+ str(final_flux[0].unit)+ '):\n')
+    for sed_value in final_flux:
+        f_log.write(str(sed_value.value))
+        if i == 5:
+            f_log.write('\n')
+            i = 0
+        i+=1
 
     f_log.write('-----------------------')
     date = datetime.datetime.now()

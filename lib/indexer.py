@@ -38,9 +38,7 @@ def MainIndex(data, config):
     if not np.any(Index):
         print('No block satisfies the initial conditions.\n')
         sys.exit(1)
-    print(Index)
-    print('all good.')
-    exit()
+
     return Index
 
 def Index_quantities(data, config):

@@ -10,6 +10,9 @@ from agnpy.compton.kernels import isotropic_kernel
 from agnpy.absorption import Absorption
 
 
+from lib.ext_compton import ExternalCompton as ExternalCompton_disk
+
+
 # Order of classes:
 # - Blumenthal
 # - Bremsstrahlung
@@ -291,6 +294,9 @@ class synchrotron:
         blocklist :class:`~list[objects.block]`: list of blocks
         nu :class:`~numpy.array(astropy.quantity)`: numpy array of frequency
         """
+
+        
+
         synchro_ssa = 0
         synchro_ssc = 0
         print('Starting computing Synchrotron and SSC, it may take some time.')
@@ -317,9 +323,8 @@ class synchrotron:
                 attenuation_ssa *= self.synchro_self_absorption(nu, scattering_blob, *scattering_blob.n_e.parameters)
                 ssc_by_blobs_on_lov += self.get_flux(ssc_sed, self.whole_blocklist[index])
 
-            synchro_ssa += synchro_flux*np.exp(-block.k*block.obs_raypath)*attenuation_ssa
-    
-        self.total_sed = synchro_ssa+synchro_ssc
+            synchro_ssa += synchro_flux*np.exp(-block.k*block.obs_raypath)*attenuation_ssa   
+        self.total_sed = synchro_ssa + synchro_ssc + ssc_by_blobs_on_lov
 
     def get_flux(self, sed, block):
         """
@@ -426,7 +431,10 @@ class ExtCompton:
 
             if block.EC:
                 for target in targetlist:
-                    ec_sed = ExternalCompton(block.blob, target, block.distance).sed_flux(nu)
+                    #ec_sed = ExternalCompton(block.blob, target, block.distance).sed_flux(nu)
+
+                    ec_sed = ExternalCompton_disk(block, target).sed_flux_from_disk(nu, self.mu_s)
+
                     gamma_abs = Absorption(target, block.distance, z = block.redshift, mu_s = self.mu_s).absorption(nu)
                     sed_list.append(ec_sed*gamma_abs)
                     
@@ -451,12 +459,13 @@ class ExtCompton:
         
             if block.EC:
                 for target in targetlist:
-                    ec_sed = ExternalCompton(block.blob, target, block.distance).sed_flux(nu)
+                    #ec_sed = ExternalCompton(block.blob, target, np.abs(block.z*u.cm)).sed_flux(nu)
+                    ec_sed = ExternalCompton_disk(block, target).sed_flux_from_disk(nu, self.mu_s)
                     gamma_abs = Absorption(target, block.distance, z = block.redshift).absorption(nu)
+
                     sed_list.append(ec_sed*gamma_abs)
 
-            for sed in sed_list:
-                
+            for sed in sed_list:        
                 totalsed +=  self.lineofview(sed, block)
 
         return totalsed
@@ -470,3 +479,4 @@ def tau_to_attenuation(tau):
     Eq. 7.122 in [DermerMenon2009]_."""
     u = 1 / 2 + np.exp(-tau) / tau - (1 - np.exp(-tau)) / np.power(tau, 2)
     return np.where(tau < 1e-3, 1, 3 * u / tau)
+
