@@ -1,5 +1,7 @@
 ## Introduction
 
+<img src="/examples/logo_sfondo_bianco.png" alt="drawing" width="200"/>
+
 JASSIE is a python module built based on python library [agnpy](https://agnpy.readthedocs.io/en/latest/index.html). The tool is still in *beta* version.
 
 This tool computes the Spectral Energy Distribution that a FLASH simulated AGN Jet would generate. It allows a certain degree of customability, providing the user the possibility to decide:
