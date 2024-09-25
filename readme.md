@@ -1,6 +1,6 @@
 ## Introduction
 
-
+JASSIE is a python module built based on python library [agnpy](https://agnpy.readthedocs.io/en/latest/index.html). The tool is still in *beta* version.
 
 This tool computes the Spectral Energy Distribution that a FLASH simulated AGN Jet would generate. It allows a certain degree of customability, providing the user the possibility to decide:
 * the distance;
@@ -71,14 +71,16 @@ Both _main.py_ and _plotting.py_ come with a txt file which serves the purpose o
 
 ### _main_
 In order to run _main.py_, one must indicate in _config.txt_:
-* data file path
+* launch settings (file path, number of cores to use)
 * output file directory path
     If no directory is indicated, the tool will automatically create a directory _plots/seds/_ and store the output there. The output name is automatically produced by the tool.
-* Blobs physical delimiters
-    The intervals of temp, density, energy and pressure must be specified. Only blobs inside the interval will be selected    
+* Blobs delimiters
+    They can be based on spatial coordinates or on physical parameters. In such case the intervals of temp, density, energy and pressure must be specified. Only blobs inside the interval will be selected    
 * Jet physical quantities
 * Emitting Regions and Process settings
     User can choose whether to consider synchrotron radiation, inverse compton, bremmstrahlung as well as the presence of a disk etc
+* Plots settings
+     range of frequencies, angle of view, distance of the source, y axis plot interval
 * Units of measure and grid units dimensions
 
 An example of _config.txt_ is provided. The [User's Manual](usermanual.pdf) provide an in detail explanation of the features and how to set it to provide maximum results.
@@ -124,3 +126,34 @@ In this case it is necessary to specify:
 * y_label - which physical quantity to be put on the y-axis
 * n - number of bins
 * cmap - max value of the color map to display on the colour bar
+
+### Output name and output log
+JASSIE labels the output name stating directly the input file name (example '*run1.hdf5*' -> '*run1_*') and adds strings based on:
+* emission processes considered
+  
+     Bremsstrahlung -> *_B*
+  
+     Synchrotron -> *_S*
+  
+     Synchrotron Self Absorption -> *a*
+  
+     Synchrotron Self Compton -> *c*
+  
+     External Compton -> *_E*
+  
+     disk -> *d*
+  
+     CMB -> *c*
+  
+* Angle of view:
+  
+    theta -> *_tnnnn* where *nnnn* stands for the angle in degree
+  
+    phi -> *_pnnnn* as above.
+  
+* a numbered label if the input file with same configuration already exists.
+  
+Example:
+   *run1_B_Sac_Ecd_t0000_p0000_0000.hdf5*
+
+JASSIE also writes a log file with a copy of the configuration used, writes the time spent on certain routines and the value of the final flux. The log can be accessed in the directory */log*
