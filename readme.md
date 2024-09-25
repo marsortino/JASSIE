@@ -26,6 +26,7 @@ It currently works on **python3.7** or above. The following libraries need to be
 * numpy
 * matplotlib
 * astropy
+* h5py
 * agnpy
 * sherpa
 * gammapy
