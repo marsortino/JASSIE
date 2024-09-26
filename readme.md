@@ -2,9 +2,9 @@
 
 <img src="/examples/logo_sfondo_bianco.png" alt="drawing" width="200"/>
 
-JASSIE is a python module built based on python library [agnpy](https://agnpy.readthedocs.io/en/latest/index.html). The tool is still in *beta* version.
+**Jetted AGN Spectrum Simulator InterfacE** (**JASSIE**) is a module built on top of the python library [agnpy](https://agnpy.readthedocs.io/en/latest/index.html). This tool is currently in *beta* version.
 
-This tool computes the Spectral Energy Distribution that a FLASH simulated AGN Jet would generate. It allows a certain degree of customability, providing the user the possibility to decide:
+JASSIE computes the Spectral Energy Distribution (SED) that a FLASH simulated AGN Jet would generate. It allows a certain degree of customability, enabling users to adjust:
 * the distance;
 * the inclination with respect the line of view;
 * which blobs take part in the emission;
@@ -12,13 +12,12 @@ This tool computes the Spectral Energy Distribution that a FLASH simulated AGN J
 
 ![example sed](/examples/run1_S_c.png)
 
-It comes with two codes:
+It comes with two scripts:
 - main.py
 - plotting.py
 
-Where the first one computes the SED and produces a plot, the latter can be used to show blobs distribution via histograms and contour plots.
-
-For further informations check the [User's Manual](usermanual.pdf)
+_main.py_ computes the SED and produces a plot, while _plotting.py_ visualizes blobs distribution using histograms and contour plots.
+For more details, please refer to the [User's Manual](usermanual.pdf)
 
 ## Requirement and installation
 
@@ -31,7 +30,7 @@ It currently works on **python3.7** or above. The following libraries need to be
 * sherpa
 * gammapy
 
-It has been correctly ran and tested on **Ubuntu 23.10**. It does **not** work on **Windows** since _sherpa_ is not supported. I was not able to test it on **Mac** so I can't provide any info on that.
+It has been successfully tested on **Ubuntu 23.10**. Note that it does **not** work on **Windows** as _sherpa_ is unsupported. Compability with **Mac OS** is untested.
 
 Before using it, it is necessary to compile the _C code_ found in lib/c_routines/codes using:
 > gcc -g - Wall raytrace . c -o raytrace - lm
@@ -42,11 +41,12 @@ Alternatevily one can launch _compile.sh_ via terminal making sure to issue the 
 
 > sh compile.sh
 
+Make sure you run this command from the directory where _main.py plotting.py_ and _lib/_ folder are located.
 from the same folder in which _main.py plotter.py_ and _lib_ are located.
 
 ### Input file structure
 
-The tool expects HDF5 files produced via FLASH. It looks for the following parameters with the respective structure:
+JASSIE expects HDF5 files produced via FLASH and looks for the following parameters with these structures:
 * temp
     * 8x8x8
 * dens
@@ -66,22 +66,22 @@ The tool expects HDF5 files produced via FLASH. It looks for the following param
 * coordinates
     * 1x3
 
-It also looks for the time between the current input simulation time and the next one in _real runtime parameters_ section and it assumes to be labeled as _dt_.
+It also expects the time interval between the current and next simulation steps to be labeled _dt_ in the _real runtime parameters_ section.
 
 ## How to Use
 
-Both _main.py_ and _plotting.py_ come with a txt file which serves the purpose of providing the launching conditions, respectively *config.txt* and *config_plot.txt*.
+Both _main.py_ and _plotting.py_ come with a corresponding conffiguration file  (*config.txt* for _main.py_ and *config_plot.txt* for _plotting.py_)
 
 ### _main_
-In order to run _main.py_, one must indicate in _config.txt_:
+To run _main.py_, specify the following in _config.txt_:
 * launch settings (file path, number of cores to use)
 * output file directory path
-    If no directory is indicated, the tool will automatically create a directory _plots/seds/_ and store the output there. The output name is automatically produced by the tool.
+    If not specified, the tool will automatically create a directory _plots/seds/_ and store the output there. The output name is generated automatically
 * Blobs delimiters
-    They can be based on spatial coordinates or on physical parameters. In such case the intervals of temp, density, energy and pressure must be specified. Only blobs inside the interval will be selected    
+    They can be based on spatial coordinates or on physical parameters. In such case the intervals of temp, density, energy and pressure must be specified.
 * Jet physical quantities
 * Emitting Regions and Process settings
-    User can choose whether to consider synchrotron radiation, inverse compton, bremmstrahlung as well as the presence of a disk etc
+    Choose whether to consider synchrotron radiation, inverse compton, bremmstrahlung as well as the presence of a disk etc
 * Plots settings
      range of frequencies, angle of view, distance of the source, y axis plot interval
 * Units of measure and grid units dimensions
@@ -95,13 +95,13 @@ One must indicate:
 
 * data file path
 * output file directory path
-    If no directory is indicated, the tool will automatically create a directory _plots/graph/_ and store the output there. The output name is automatically produced by the tool.
+    If not specified, JASSIE will automatically create a directory _plots/graph/_ and store the output there. The output name is generated automatically.
 * Blobs physical delimiters
-    The intervals of temp, density, energy and pressure must be specified. Only blobs inside the interval will be selected    
-* Graph Kind
+    Specify intervals for temperature, density, energy and pressure.
+* Graph type
 * Units of measure and grid units dimensions
 
-There are two graphs structure available: *histogram* and *counter* plots. In order to launch one or the other, the _config\_plot_ structure must be changed.
+There are two available graphs type: *histogram* and *counter* plots. Specify the desired type in the _config\_plot_ file.
 
 #### _histogram_
 
@@ -109,7 +109,7 @@ There are two graphs structure available: *histogram* and *counter* plots. In or
 
 In this case it is necessary to specify:
 * label1 - the physical quantity to consider
-    * The user can indicate to compute more than 1 histogram per once. This can be done by entering more than one parameter. i.e.:
+    * You can plot multiple histograms by specifying additional labels, e.g.:
     > label1 = temp
     >
     > label2 = energy 
@@ -125,28 +125,25 @@ In this case it is necessary to specify:
 ![counter example](/examples/run1_contour__temperature_energy.png)
 
 In this case it is necessary to specify:
-* x_label - which physical quantity to be put on the x-axis
-* y_label - which physical quantity to be put on the y-axis
+* x_label - physical quantity for the x-axis
+* y_label - physical quantity for the x-axis
 * n - number of bins
-* cmap - max value of the color map to display on the colour bar
+* cmap - maximum color map value for the color bar
 
 ### Output name and output log
-JASSIE labels the output name stating directly the input file name (example '*run1.hdf5*' -> '*run1_*') and adds strings based on:
-* emission processes considered
-  
-     Bremsstrahlung -> *_B*
-  
-     Synchrotron -> *_S*
-  
-     Synchrotron Self Absorption -> *a*
-  
-     Synchrotron Self Compton -> *c*
-  
-     External Compton -> *_E*
-  
-     disk -> *d*
-  
-     CMB -> *c*
+JASSIE names output files based on the input file name, with suffixes added according to the emission processes considered. For example:
+* _run1.hdf5 → run1_B_Sac_Ecd_t0000_p0000_0000.hdf5_
+
+
+Suffixes includes:
+* Bremsstrahlung -> *_B*
+* Synchrotron -> *_S*
+* Synchrotron Self Absorption -> *a*
+* Synchrotron Self Compton -> *c*
+* External Compton -> *_E*
+* disk -> *d*
+* CMB -> *c*
+
   
 * Angle of view:
   
@@ -155,8 +152,5 @@ JASSIE labels the output name stating directly the input file name (example '*ru
     phi -> *_pnnnn* as above.
   
 * a numbered label if the input file with same configuration already exists.
-  
-Example:
-   *run1_B_Sac_Ecd_t0000_p0000_0000.hdf5*
 
-JASSIE also writes a log file with a copy of the configuration used, writes the time spent on certain routines and the value of the final flux. The log can be accessed in the directory */log*
+The tool also generates a log file with configuration details, routine execution times, and the final flux value, accessible in the _/log_ directory.
