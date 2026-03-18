@@ -168,6 +168,9 @@ if sets['id_syn']:
 
 #     # *************************************//
 
+
+
+
 if sets['id_ec']:
     # //*************************************
     # EXTERNAL COMPTON
@@ -179,6 +182,26 @@ if sets['id_ec']:
     time_table['External_Compton'] = end_time-start_time
     if speed_up_test:
         ftime.write('ExC: ' + str(end_time-start_time))
+
+
+import warnings
+
+with warnings.catch_warnings(record=True) as w:
+    warnings.simplefilter("always", RuntimeWarning)
+
+
+for warn in w:
+    if issubclass(warn.category, RuntimeWarning):
+        print("\n--- RUNTIME WARNING ---")
+        print("Messaggio:", warn.message)
+        print("File:", warn.filename)
+        print("Linea:", warn.lineno)
+        # QUI metto i print dei valori sospetti
+        ##print("blob gamma =", block.blob.Gamma)
+        ##print("blob deltaD =", block.blob.delta_D)
+        ##print("blob Beta=", block.blob.Beta)
+            
+                
 
 # #     # *************************************//
 if speed_up_test:
