@@ -56,6 +56,7 @@ class datamap:
         self.velzSet = np.array(fname.get('velz'), dtype = float)
         self.BlockSize = np.array(fname.get('block size'), dtype = float)
         self.coordSet = np.array(fname.get('coordinates'), dtype = float)
+        self.NodeLevel= np.array(fname.get('node type'), dtype=int)
 
         # Looking for dt min
         self.dtmin = self.timestep(fname['real scalars'])*self.units[1]
@@ -576,169 +577,28 @@ def write_log_coords(file_pointer, config):
     for parameter in quantity:
         file_pointer.write(parameter+': '+str(config[parameter])+'\n')
 
+def get_linear_gradient(p_min, p_max, blocklist):
+    """
+    """
+    n_block = len(blocklist)
 
-# class absorption:
-#     """
-    
-#     """
-#     def __init__(self, target, r=None, z=0, mu_s =1):
-#         self.target = target
-#         self.r = r
-#         self.z = z
-#         self.mu_s = mu_s
-#         self.set_mu()
-#         self.set_phi()
-#         self.set_l()
+    distance_min = np.abs(blocklist[0].distance)
+    distance_max = distance_min+1*distance_min.unit
 
-#     def set_mu(self, mu_size=100):
-#         self.mu_size = mu_size
-#         self.mu = np.linspace(-1, 1, self.mu_size)
+    for i in range(1, n_block):
+            block_distance = blocklist[i].distance
+            if distance_min > block_distance:
+                distance_min = block_distance
+            elif distance_max < block_distance:
+                distance_max = block_distance
 
-#     def set_phi(self, phi_size=50):
-#         "Set array of azimuth angles to integrate over"
-#         self.phi_size = phi_size
-#         self.phi = np.linspace(0, 2 * np.pi, self.phi_size)
+    print('min distance from center:', distance_min)
+    print('max distance from center:', distance_max)
 
-#     def set_l(self, l_size=50):
-#         self.l_size = l_size
+    p_array = []
+    for i in range(0, n_block):
+        block_distance = blocklist[i].distance
+        p_array.append(p_min + (p_max - p_max)*(block_distance - distance_min)/(distance_max - distance_min))
+        
 
-#     def evaluate_tau_ss_disk_mu_s(
-#             nu,
-#             z,
-#             mu_s,
-#             M_BH,
-#             L_disk,
-#             eta,
-#             R_in,
-#             R_out,
-#             r,
-#             R_tilde_size = 100,
-#             l_tilde_size = 50,
-#             phi = phi_to_integrate,
-#     ):
-#         """Evaluates the gamma-gamma absorption produced by the photon field of
-#         a Shakura-Sunyaev accretion disk
-
-#         Parameters
-#         ----------
-#         nu : :class:`~astropy.units.Quantity`
-#             array of frequencies, in Hz, to compute the opacity
-#             **note** these are observed frequencies (observer frame)
-#         z : float
-#             redshift of the source
-#         mu_s : float
-#             cosine of the angle between the blob motion and the jet axis
-#         M_BH : :class:`~astropy.units.Quantity`
-#             Black Hole mass
-#         L_disk : :class:`~astropy.units.Quantity`
-#             luminosity of the disk
-#         eta : float
-#             accretion efficiency
-#         R_in : :class:`~astropy.units.Quantity`
-#             inner disk radius
-#         R_out : :class:`~astropy.units.Quantity`
-#             inner disk radius
-#         R_tilde_size : int
-#             size of the array of disk coordinates to integrate over
-#         r : :class:`~astropy.units.Quantity`
-#             distance between the point source and the blob
-#         l_tilde_size : int
-#             size of the array of distances from the BH to integrate over
-#         phi : :class:`~numpy.ndarray`
-#             array of azimuth angles to integrate over
-
-#         Returns
-#         -------
-#         :class:`~astropy.units.Quantity`
-#             array of the tau values corresponding to each frequency
-#         """
-#         # conversions
-#         R_g = (G * M_BH / c ** 2).to("cm")
-#         r_tilde = to_R_g_units(r, M_BH)
-#         R_in_tilde = to_R_g_units(R_in, M_BH)
-#         R_out_tilde = to_R_g_units(R_out, M_BH)
-
-
-
-
-#     def evaluate_tau_blr_mu_s(
-#         nu,
-#         z,
-#         mu_s,
-#         L_disk,
-#         xi_line,
-#         epsilon_line,
-#         R_line,
-#         r,
-#         u_size=100,
-#         mu=mu_to_integrate,
-#         phi=phi_to_integrate,
-#     ):
-#         """Evaluates the gamma-gamma absorption produced by a spherical shell
-#         BLR for a general set of model parameters and arbitrary mu_s
-
-#         Parameters
-#         ----------
-#         nu : :class:`~astropy.units.Quantity`
-#             array of frequencies, in Hz, to compute the tau
-#             **note** these are observed frequencies (observer frame)
-#         z : float
-#             redshift of the source
-#         mu_s : float
-#             cosine of the angle between the blob motion and the jet axis
-#         L_disk : :class:`~astropy.units.Quantity`
-#             Luminosity of the disk whose radiation is being reprocessed by the BLR
-#         xi_line : float
-#             fraction of the disk radiation reprocessed by the BLR
-#         epsilon_line : string
-#             dimensionless energy of the emitted line
-#         R_line : :class:`~astropy.units.Quantity`
-#             radius of the BLR spherical shell
-#         r : :class:`~astropy.units.Quantity`
-#             distance between the Broad Line Region and the blob
-#         l_size : int
-#             size of the array of distances from the BH to integrate over
-#         mu, phi : :class:`~numpy.ndarray`
-#             arrays of cosine of zenith and azimuth angles to integrate over
-
-#         Returns
-#         -------
-#         :class:`~astropy.units.Quantity`
-#             array of the tau values corresponding to each frequency
-#         """
-#         # conversions
-#         epsilon_1 = nu_to_epsilon_prime(nu, z)
-#         # multidimensional integration
-#         # here uu is the distance that the photon traversed
-#         uu = np.logspace(-5, 5, u_size) * r
-
-#         # check if for any uu value the position of the photon is too close to the BLR
-#         x_cross = np.sqrt(r ** 2 + uu ** 2 + 2 * uu * r * mu_s)
-#         idx = np.isclose(x_cross, R_line, rtol=min_rel_distance)
-#         if idx.any():
-#             uu[idx] += min_rel_distance * R_line
-#             # it might happen that some of the points get more shifted then the next one,
-#             # possibly making integration messy, so we sort the points
-#             uu = np.sort(uu)
-
-#         _mu_re, _phi_re, _u, _epsilon_1 = axes_reshaper(mu, phi, uu, epsilon_1)
-
-#         # distance between soft photon and gamma ray
-#         x = x_re_shell_mu_s(R_line, r, _phi_re, _mu_re, _u, mu_s)
-
-#         # convert the phi and mu angles of the position in the sphere into the actual phi and mu angles
-#         # the actual phi and mu angles of the soft photon catching up with the gamma ray
-#         _phi, _mu_star = phi_mu_re_shell(R_line, r, _phi_re, _mu_re, _u, mu_s)
-
-#         # angle between the soft photon and gamma ray
-#         _cos_psi = cos_psi(mu_s, _mu_star, _phi)
-#         s = _epsilon_1 * epsilon_line * (1 - _cos_psi) / 2
-#         integrand = (1 - _cos_psi) / x ** 2 * sigma(s)
-#         # integrate
-#         integral_mu = np.trapz(integrand, mu, axis=0)
-#         integral_phi = np.trapz(integral_mu, phi, axis=0)
-#         integral = np.trapz(integral_phi, uu, axis=0)
-#         prefactor = (L_disk * xi_line) / (
-#             (4 * np.pi) ** 2 * epsilon_line * m_e * c ** 3
-#         )
-#         return (prefactor * integral).to_value("")
+    return p_array
