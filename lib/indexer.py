@@ -18,9 +18,12 @@ def MainIndex(data, config):
     data: :class:`~misc.datamap` file data obtained by misc.datamap
     config: :class:`~dictionary` dictionary containing the values needed;
     """
+    Index_leafs = Index_nodeleaf(data)
+
 
     if config['blocks'] == 'all':
         Index = np.unique(np.argwhere(data.DistanceSet>0))
+        Index = np.intersect1d(Index, Index_leafs)
         return Index
 
     elif config['blocks'] == 'phys_only':
@@ -32,8 +35,13 @@ def MainIndex(data, config):
     elif config['blocks'] == 'both':
         Index = Index_both(data, config)
 
+    Index_leafs = Index_nodeleaf(data)
     Index_source =  np.unique(np.argwhere(data.DistanceSet>0))
+
+    Index_viable = np.intersect1d(Index_leafs, Index_source)
+
     Index = np.intersect1d(Index, Index_source)
+    Index = np.intersect1d(Index, Index_viable)
 
     if not np.any(Index):
         print('No block satisfies the initial conditions.\n')
@@ -41,11 +49,17 @@ def MainIndex(data, config):
 
     return Index
 
+def Index_nodeleaf(data):
+    """
+    Returns the index of blocks at node leaf level (node type = 1)
+    """
+    return np.unique(np.argwhere((data.NodeLevel == 1)))
+
+
 def Index_quantities(data, config):
     """
     Returns the index of blocks that satisfy the physical conditions stated in config.txt
     """
-
     n = len(data.TempSet[:,1,1,1])
 
     n_0 = np.zeros(n)
