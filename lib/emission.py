@@ -11,6 +11,9 @@ from agnpy.absorption import Absorption
 
 
 from lib.ext_compton import ExternalCompton as ExternalCompton_disk
+from lib.misc import get_linear_gradient
+
+import warnings
 
 
 # Order of classes:
@@ -59,50 +62,85 @@ class Bremsstrahlung:
         nu = config['nu']
         self.gamma_min = config['gamma_Min']
         self.B = config['B']
-        self.p = config['p']
         self.Z = config['Z']
+
         self.r_e = (e.esu**2/(m_e*c**2)).to(u.m)
         self.k = (h*nu/(m_e*c**2)).to(u.Unit(""))
-        Total_J_nu = self.emission(blocklist, nu)
+
+        if config['n_e'] == 'PowerLaw':
+            self.p = config['p']
+            Total_J_nu = self.emission(blocklist, nu)
+
+        elif config['n_e'] == 'BrokenPowerLaw': # nb. broken power law is still not available.
+            self.p1 = config['p1']
+            self.p2 = config['p2']
+            self.gamma_B = config['gamma_B']
+
+        elif config['n_e'] == 'PowerLaw_LinearGradient':
+            self.p_min = config['p_min']
+            self.p_max = config['p_max']
+            p_array = get_linear_gradient(self.p_min, self.p_max, blocklist)
+
+            Total_J_nu = self.emission(blocklist, nu, p_array)
+            
+
+
         sed = self.computeflux(blocklist, nu, Total_J_nu)
         self.sedlist = sed[0]
         self.total_sed = sed[1]
 
 
-    def emission(self, blocklist, nu):
+    def emission(self, blocklist, nu, p_array=None):
         """
         Computes the bremsstrahlung emission. Returns: 
                 alpha * r_e^2*c*K_e*k^-1 * integral
         integral is computed in the function 'integral'
 
+        
         Parameters:
         --
         blocklist :class:`~list[objects.block]`: list of blocks
         nu :class:`~astropy.quantity`: numpy array of frequency
+        p_array :class: `~list[float]`: list of power law coefficients. If None, the code will assume it is a power law distribution
         """
-
-
-        TotalIntegral = self.integral()
-        TotalIntegral = np.where(nu>1e13*u.Hz, 0, TotalIntegral)
 
         BlocksEmission = []
 
-        for block in blocklist:
-            prefactor = alpha*self.r_e**2
-            midfactor = block.K_e*c
-            Integral = self.k**(-1)*block.n_0*TotalIntegral
-            rest_energy = m_e*c**2
-            total = prefactor*midfactor*Integral*rest_energy
-            total = total.to(u.Unit('erg cm-3 s-1'))
-            BlocksEmission.append(total)
+        if p_array == None:
+            TotalIntegral = self.integral()
+            TotalIntegral = np.where(nu>1e13*u.Hz, 0, TotalIntegral)
+            for block in blocklist:
+                prefactor = alpha*self.r_e**2
+                midfactor = block.K_e*c
+                Integral = self.k**(-1)*block.n_0*TotalIntegral
+                rest_energy = m_e*c**2
+                total = prefactor*midfactor*Integral*rest_energy
+                total = total.to(u.Unit('erg cm-3 s-1'))
+                BlocksEmission.append(total)
+
+        else:
+                for block, p in zip(blocklist, p_array):
+                    TotalIntegral = self.integral(p)
+                    TotalIntegral = np.where(nu>1e13*u.Hz, 0, TotalIntegral)
+                    prefactor = alpha*self.r_e**2
+                    midfactor = block.K_e*c
+                    Integral = self.k**(-1)*block.n_0*TotalIntegral
+                    rest_energy = m_e*c**2
+                    total = prefactor*midfactor*Integral*rest_energy
+                    total = total.to(u.Unit('erg cm-3 s-1'))
+                    BlocksEmission.append(total)
         return BlocksEmission
 
-    def integral(self):
+    def integral(self, p = None):
         """
         Computes the I' value of Blumenthal & Gould (1970) equation "I = I'*\phi" as it follows:
             I' = \frac{4}{3} \frac{E_L^{-(p-1)}}{p-1} - \frac{4}{3} \frac{k E_L^{-p}}{p} + \frac{k^2E_L^{-(p+1)}}{p+1}
+        
+        If p = None we are in the PowerLaw case. 
         """
-        p = self.p
+        if p == None:
+            p = self.p
+
         k = self.k
 
         E_l = np.maximum.outer(k, self.gamma_min)
@@ -121,7 +159,6 @@ class Bremsstrahlung:
         E_0 = self.gamma_min
         Z = self.Z
         return np.where(k>=E_0, 4*(Z**2+Z)*(np.log(4*k)-1/2),  4*(Z**2+Z)*(np.log(2*E_0*(E_0-k)/k)-0.5))
-
 
     def computeflux(self, blockslist, nu, Total_J_nu):
         """
@@ -227,23 +264,22 @@ class synchrotron:
 
         synchro_ssa = 0
         for block in blocklist:
-            sed = Synchrotron(block.blob, ssa = True).sed_flux(nu)
+            sed = Synchrotron(block.blob).sed_flux(nu)
+            attenuation_ssa = self.synchro_self_absorption(nu, block.blob, *block.blob.n_e.parameters)
             # Computes the gamma absorption factor.
             gamma_absorption_self = Absorption(block.blob, mu_s = self.mu_s).absorption_homogeneous(nu)
+            gamma_absorption_self = np.nan_to_num(gamma_absorption_self, nan=1)
             # For each block we compute the self absorption produced by the electrons of the blocks that lies on the line of view.
-            attenuation_ssa = 1
             attenuation_gamma_lov = 1
             for index in block.distance_order:
                 # Defines the absorbing blob, computes the gamma absorption factor.
-                absorbing_blob = blocklist[index].blob
-                attenuation_ssa *= self.synchro_self_absorption(nu, absorbing_blob)
+                absorbing_blob = self.whole_blocklist[index].blob
+                attenuation_ssa *= self.synchro_self_absorption(nu, absorbing_blob, *absorbing_blob.n_e.parameters)
                 attenuation_gamma_lov *= Absorption(absorbing_blob, mu_s = self.mu_s).absorption(nu)
                 # PS we multiply because we would have I_n = I_0 * e^tau_1 *e^tau_2 * ... * e^tau_n
 
-
             #Everything is then multiplied. Returning the final sed.
-            synchro_ssa += sed*np.exp(-block.k*block.obs_raypath)*attenuation_ssa*attenuation_gamma_lov*gamma_absorption_self
-
+            synchro_ssa += sed*np.exp(-block.k*block.obs_raypath)*attenuation_ssa*attenuation_gamma_lov#*gamma_absorption_self
         self.total_sed = synchro_ssa
 
     def flux_ssc(self, blocklist, nu):
@@ -272,7 +308,7 @@ class synchrotron:
             
             for index in block.distance_order:
                 # Defines the scattering blob, computes the gamma absorption factor.
-                scattering_blob = self.whole_blocklist[index]
+                scattering_blob = self.whole_blocklist[index].blob
                 gamma_absorption = Absorption(scattering_blob, mu_s = self.mu_s).absorption(nu)
                 # Multiplies the original flux by the gamma absorption factor (e^-tau)
                 flux_post_interaction *= gamma_absorption
@@ -282,6 +318,7 @@ class synchrotron:
                 ssc_by_blobs_on_lov += self.get_flux(ssc_sed, self.whole_blocklist[index])
 
             synchro_ssc += ssc*np.exp(-block.k*block.obs_raypath) + ssc_by_blobs_on_lov
+
 
         self.total_sed = synchro+synchro_ssc
     
@@ -295,21 +332,19 @@ class synchrotron:
         nu :class:`~numpy.array(astropy.quantity)`: numpy array of frequency
         """
 
-        
-
         synchro_ssa = 0
         synchro_ssc = 0
         print('Starting computing Synchrotron and SSC, it may take some time.')
         for block in blocklist:
             # Computes the gamma absorption factor and it is then multiplied to the sed, both the synchro and the synchro self Compton case.
             gamma_absorption_self = np.nan_to_num(Absorption(block.blob, mu_s = self.mu_s).absorption_homogeneous(nu), nan=1)
-            synchro_flux = Synchrotron(block.blob, ssa = True).sed_flux(nu)*gamma_absorption_self
+            synchro_flux = Synchrotron(block.blob).sed_flux(nu)*gamma_absorption_self
+            attenuation_ssa = self.synchro_self_absorption(nu, block.blob, *block.blob.n_e.parameters)
             ssc = SynchrotronSelfCompton(block.blob).sed_flux(nu)*gamma_absorption_self
             # For each block the sed is computed and then summed up. 
             synchro_ssc += self.get_flux(ssc, block)
             # For each block we compute the self compton produced by the scattering of synchroton photons flux with the blocks that lies on the line of view.
             ssc_by_blobs_on_lov = 0
-            attenuation_ssa = 1
             flux_post_interaction = synchro_flux
 
             for index in block.distance_order:
@@ -324,6 +359,7 @@ class synchrotron:
                 ssc_by_blobs_on_lov += self.get_flux(ssc_sed, self.whole_blocklist[index])
 
             synchro_ssa += synchro_flux*np.exp(-block.k*block.obs_raypath)*attenuation_ssa   
+
         self.total_sed = synchro_ssa + synchro_ssc + ssc_by_blobs_on_lov
 
     def get_flux(self, sed, block):
@@ -397,6 +433,8 @@ class synchrotron:
                                     *args,
                                     gamma = absorbing_blob.gamma_e,
                                     )
+        tau = np.asarray(tau, dtype=float)
+        tau[tau < 1e-3] = 1e-3
         attenuation = tau_to_attenuation(tau)
         return attenuation
     
@@ -434,14 +472,16 @@ class ExtCompton:
                     #ec_sed = ExternalCompton(block.blob, target, block.distance).sed_flux(nu)
 
                     ec_sed = ExternalCompton_disk(block, target).sed_flux_from_disk(nu, self.mu_s)
-
                     gamma_abs = Absorption(target, block.distance, z = block.redshift, mu_s = self.mu_s).absorption(nu)
+
                     sed_list.append(ec_sed*gamma_abs)
                     
             if block.CMB:
                 ec = ExternalCompton(block.blob, CMB(block.redshift), block.distance).sed_flux(nu)
-                gamma_abs = Absorption(CMB(block.redshift), block.distance, block.redshift, mu_s = self.mu_s).absorption(nu)
-                totalsed +=  self.lineofview(ec*gamma_abs, block)
+                
+                #gamma_abs = Absorption(CMB(block.redshift), block.distance, block.redshift, mu_s = self.mu_s).absorption(nu)
+                #totalsed +=  self.lineofview(ec*gamma_abs, block)
+                totalsed += ec
 
             for sed in sed_list:
                 totalsed += self.lineofview(sed, block)
@@ -477,6 +517,7 @@ def tau_to_attenuation(tau):
     """FROM AGNPY ***
     Converts the synchrotron self-absorption optical depth to an attenuation
     Eq. 7.122 in [DermerMenon2009]_."""
-    u = 1 / 2 + np.exp(-tau) / tau - (1 - np.exp(-tau)) / np.power(tau, 2)
+
+    u = 1/2 + np.exp(-tau) / tau - (1 - np.exp(-tau)) / np.power(tau, 2)
     return np.where(tau < 1e-3, 1, 3 * u / tau)
 
