@@ -53,6 +53,8 @@ def synchro(blocklist, config):
     whole_blocklist = blocklist
     if block_per_core == 0 or num_cores == 1:
         total_synchro_sed = em.synchrotron(blocklist, config, blocklist).total_sed
+        return total_synchro_sed
+
     else:
         q = multiprocessing.Queue()
         for i in range(0, num_cores-1):
