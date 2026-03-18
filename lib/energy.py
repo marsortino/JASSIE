@@ -5,7 +5,7 @@ from agnpy.targets import SSDisk, RingDustTorus, SphericalShellBLR, CMB
 from agnpy.spectra import PowerLaw, BrokenPowerLaw
 from agnpy.emission_regions import Blob
 import lib.conversions as cs
-from lib.misc import mu_from_r_tilde_dec, integrals
+from lib.misc import mu_from_r_tilde_dec, integrals, get_linear_gradient
 
 from decimal import Decimal, getcontext 
 
@@ -254,7 +254,7 @@ class Block_Energy:
                 self.ElectronDistribution_BPL(self.K_eNormalizer(block), block)
             
         elif self.n_e == 'PowerLaw_LinearGradient':
-            p_array = self.get_linear_gradient(blocklist)
+            p_array = get_linear_gradient(self.p_min, self.p_max, blocklist)
             self.n_e = 'PowerLaw'
             for block, p in zip(blocklist, p_array):
                 self.E_initial(block)
@@ -335,29 +335,3 @@ class Block_Energy:
         )
         n_e_values = nelectrons((block.E_f+self.gamma_min)/2)
         block.electronic_distribution(K_e, nelectrons, n_e_values)
-
-    def get_linear_gradient(self, blocklist):
-        """
-        """
-        n_block = len(blocklist)
-
-        z_min = np.abs(blocklist[0].z)
-        z_max = z_min+1
-
-        for i in range(1, n_block):
-                block_z = np.abs(blocklist[i].z)
-                if z_min > block_z:
-                    z_min = block_z
-                elif z_max < block_z:
-                    z_max = block_z
-    
-        print('z_min:', z_min)
-        print('z_max:', z_max)
-
-        p_array = []
-        for i in range(0, n_block):
-            block_z = np.abs(blocklist[i].z)
-            p_array.append(self.p_min + (self.p_max - self.p_max)*(block_z - z_min)/(z_max - z_min))
-        
-
-        return p_array
